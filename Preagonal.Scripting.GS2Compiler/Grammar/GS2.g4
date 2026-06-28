@@ -11,7 +11,8 @@ functionDeclaration: PUBLIC? FUNCTION qualifiedName LPAREN parameterList? RPAREN
 parameterList: IDENTIFIER (COMMA IDENTIFIER)* COMMA?;
 block: LBRACE statement* RBRACE;
 statement: block | ifStatement | forStatement | whileStatement | switchStatement | withStatement | newStatement | returnStatement | breakStatement | continueStatement | expressionStatement | SEMI;
-ifStatement: IF LPAREN expression RPAREN statement (ELSE statement)?;
+ifStatement: IF LPAREN expression RPAREN statement (ELSE statement | ELSEIF ifTail)?;
+ifTail: LPAREN expression RPAREN statement (ELSE statement | ELSEIF ifTail)?;
 forStatement: FOR LPAREN expression? SEMI expression? SEMI expression? RPAREN statement | FOR LPAREN IDENTIFIER COLON expression RPAREN statement;
 whileStatement: WHILE LPAREN expression RPAREN statement;
 switchStatement: SWITCH LPAREN expression RPAREN LBRACE switchCase* RBRACE;
@@ -56,6 +57,7 @@ PUBLIC: 'public';
 FUNCTION: 'function';
 IF: 'if';
 ELSE: 'else';
+ELSEIF: 'elseif';
 FOR: 'for';
 WHILE: 'while';
 SWITCH: 'switch';
