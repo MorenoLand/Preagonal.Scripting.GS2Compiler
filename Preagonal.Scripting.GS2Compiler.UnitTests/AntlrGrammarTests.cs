@@ -17,7 +17,18 @@ public class AntlrGrammarTests
 	[MemberData(nameof(ParserFixtures))]
 	public void Given_fixture_When_parsed_with_generated_antlr_parser_Then_no_syntax_errors(string scriptPath)
 	{
-		var input = CharStreams.fromString(File.ReadAllText(scriptPath));
+		AssertParses(File.ReadAllText(scriptPath));
+	}
+
+	[Fact]
+	public void Given_cast_script_When_parsed_with_generated_antlr_parser_Then_no_syntax_errors()
+	{
+		AssertParses("function onCreated() { temp.i = int(\"3.8\"); temp.f = float(\"2.5\"); temp.t = _(\"Hello\"); }");
+	}
+
+	private static void AssertParses(string code)
+	{
+		var input = CharStreams.fromString(code);
 		var lexer = new GS2Lexer(input);
 		var tokens = new CommonTokenStream(lexer);
 		var parser = new GS2Parser(tokens);

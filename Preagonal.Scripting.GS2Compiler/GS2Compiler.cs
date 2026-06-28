@@ -428,6 +428,9 @@ internal static class GS2Compiler
 				if (_previous.Text == "\\") Error("malformed input");
 				return new StringExpr(_previous.Text);
 			}
+			if (Match(TokenType.IntCast)) return ParseCast("int");
+			if (Match(TokenType.FloatCast)) return ParseCast("float");
+			if (Match(TokenType.Translate)) return ParseCast("_");
 			if (Match(TokenType.True)) return new BoolExpr(true);
 			if (Match(TokenType.False)) return new BoolExpr(false);
 			if (Match(TokenType.Null)) return new NullExpr();
@@ -504,6 +507,14 @@ internal static class GS2Compiler
 			}
 			Error("malformed input");
 			return new NumberExpr("0");
+		}
+
+		private Expr ParseCast(string type)
+		{
+			Expect(TokenType.LeftParen);
+			var expression = ParseExpression();
+			Expect(TokenType.RightParen);
+			return new CastExpr(type, expression);
 		}
 
 		private int ParseSignedInt()
@@ -994,6 +1005,20 @@ internal static class GS2Compiler
 					_bytecode.Emit(Op.Dec);
 					_bytecode.Emit(Op.IndexDec);
 					break;
+				case CastExpr { Type: "int", Expression: var castValue }:
+					Emit(castValue);
+					if (!IsNumberExpr(castValue)) _bytecode.Emit(Op.ConvToFloat);
+					_bytecode.Emit(Op.Int);
+					break;
+				case CastExpr { Type: "float", Expression: var castValue }:
+					Emit(castValue);
+					if (!IsNumberExpr(castValue)) _bytecode.Emit(Op.ConvToFloat);
+					break;
+				case CastExpr { Type: "_", Expression: var castValue }:
+					Emit(castValue);
+					if (castValue is not StringExpr) _bytecode.Emit(Op.ConvToString);
+					_bytecode.Emit(Op.Translate);
+					break;
 				case CallExpr call when BuiltInCalls.TryGetValue(call.Name, out var builtIn):
 					for (var i = call.Args.Count - 1; i >= 0; --i)
 					{
@@ -1106,7 +1131,7 @@ internal static class GS2Compiler
 			_ => true
 		};
 
-		private static bool IsNumberExpr(Expr expr) => expr is NumberExpr or UnaryExpr { Op: "-", Expression: NumberExpr };
+		private static bool IsNumberExpr(Expr expr) => expr is NumberExpr or UnaryExpr { Op: "-", Expression: NumberExpr } or CastExpr { Type: "int" or "float" };
 
 		private static bool IsBooleanExpr(Expr expr) => expr switch
 		{
@@ -1137,6 +1162,7 @@ internal static class GS2Compiler
 			InExpr inExpr => ContainsCall(inExpr.Expression) || ContainsCall(inExpr.Lower) || (inExpr.Upper != null && ContainsCall(inExpr.Upper)),
 			BinaryExpr binary => ContainsCall(binary.Left) || ContainsCall(binary.Right),
 			UnaryExpr unary => ContainsCall(unary.Expression),
+			CastExpr cast => ContainsCall(cast.Expression),
 			MemberExpr member => ContainsCall(member.Object),
 			DynamicMemberExpr member => ContainsCall(member.Object) || ContainsCall(member.Name),
 			DynamicVarExpr dynamicVar => ContainsCall(dynamicVar.Name),
@@ -1439,6 +1465,9 @@ internal static class GS2Compiler
 				"default" => TokenType.Default,
 				"break" => TokenType.Break,
 				"continue" => TokenType.Continue,
+				"int" => TokenType.IntCast,
+				"float" => TokenType.FloatCast,
+				"_" => TokenType.Translate,
 				"true" => TokenType.True,
 				"false" => TokenType.False,
 				"null" => TokenType.Null,
@@ -1477,7 +1506,7 @@ internal static class GS2Compiler
 		private static bool IsIdentPart(char c) => char.IsLetterOrDigit(c) || c is '_' or '$';
 	}
 
-	private enum TokenType { Unknown, End, Identifier, Number, String, Const, Enum, Function, Public, Return, If, Else, ElseIf, For, While, With, New, In, Switch, Case, Default, Break, Continue, True, False, Null, Assign, AddAssign, SubAssign, MulAssign, DivAssign, ModAssign, CatAssign, Semicolon, Comma, Colon, Question, Dot, Scope, LeftBrace, RightBrace, LeftParen, RightParen, LeftBracket, RightBracket, Minus, Plus, Star, Slash, Percent, Caret, At, Not, Equal, NotEqual, Less, LessEqual, Greater, GreaterEqual, And, Or, BitAnd, BitOr, ShiftLeft, ShiftRight, Increment, Decrement }
+	private enum TokenType { Unknown, End, Identifier, Number, String, Const, Enum, Function, Public, Return, If, Else, ElseIf, For, While, With, New, In, Switch, Case, Default, Break, Continue, IntCast, FloatCast, Translate, True, False, Null, Assign, AddAssign, SubAssign, MulAssign, DivAssign, ModAssign, CatAssign, Semicolon, Comma, Colon, Question, Dot, Scope, LeftBrace, RightBrace, LeftParen, RightParen, LeftBracket, RightBracket, Minus, Plus, Star, Slash, Percent, Caret, At, Not, Equal, NotEqual, Less, LessEqual, Greater, GreaterEqual, And, Or, BitAnd, BitOr, ShiftLeft, ShiftRight, Increment, Decrement }
 	private sealed record Token(TokenType Type, string Text, int Line, int Column) { public string LineText { get; init; } = ""; }
 	private sealed record ProgramNode(Dictionary<string, Expr> Constants, Dictionary<string, Dictionary<string, int>> Enums, List<FunctionNode> Functions, List<Stmt> TopLevelStatements);
 	private sealed record FunctionNode(string Name, string? ObjectName, bool Public, List<Expr> Args, List<Stmt> Body);
@@ -1500,6 +1529,7 @@ internal static class GS2Compiler
 	private sealed record InExpr(Expr Expression, Expr Lower, Expr? Upper) : Expr;
 	private sealed record TernaryExpr(Expr Condition, Expr WhenTrue, Expr WhenFalse) : Expr;
 	private sealed record UnaryExpr(string Op, Expr Expression) : Expr;
+	private sealed record CastExpr(string Type, Expr Expression) : Expr;
 	private sealed record MemberExpr(Expr Object, string Name) : Expr;
 	private sealed record DynamicMemberExpr(Expr Object, Expr Name) : Expr;
 	private sealed record DynamicVarExpr(Expr Name) : Expr;
@@ -1572,6 +1602,7 @@ internal static class GS2Compiler
 		InRange = 80,
 		InObj = 81,
 		Abs = 86,
+		Int = 85,
 		Sin = 88,
 		Cos = 89,
 		Arctan = 90,
@@ -1581,6 +1612,7 @@ internal static class GS2Compiler
 		ShiftRight = 102,
 		Char = 103,
 		Join = 113,
+		Translate = 119,
 		Array = 131,
 		ArrayAssign = 132,
 		ArrayMultiDim = 133,
