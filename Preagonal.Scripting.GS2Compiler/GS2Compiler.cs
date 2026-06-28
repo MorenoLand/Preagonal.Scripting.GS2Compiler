@@ -134,6 +134,11 @@ internal static class GS2Compiler
 				Expect(TokenType.Semicolon);
 				return new BreakStmt();
 			}
+			if (Match(TokenType.Continue))
+			{
+				Expect(TokenType.Semicolon);
+				return new ContinueStmt();
+			}
 			if (Match(TokenType.If))
 			{
 				Expect(TokenType.LeftParen);
@@ -546,6 +551,7 @@ internal static class GS2Compiler
 		private readonly Dictionary<string, Expr> _constants;
 		private readonly Dictionary<string, Dictionary<string, int>> _enums;
 		private readonly Stack<List<int>> _breakPatches = new();
+		private readonly Stack<List<int>> _continuePatches = new();
 		private int _newObjectCount;
 
 		public Emitter(BytecodeWriter bytecode, Dictionary<string, Expr> constants, Dictionary<string, Dictionary<string, int>> enums)
@@ -605,6 +611,7 @@ internal static class GS2Compiler
 			else if (statement is WithStmt withStatement) EmitWith(withStatement);
 			else if (statement is SwitchStmt switchStatement) EmitSwitch(switchStatement);
 			else if (statement is BreakStmt) EmitBreak();
+			else if (statement is ContinueStmt) EmitContinue();
 			else if (statement is BlockStmt blockStatement) foreach (var stmt in blockStatement.Body) EmitStatement(stmt);
 			else if (statement is NewStmt newStatement) EmitNewStatement(newStatement);
 		}
@@ -634,11 +641,15 @@ internal static class GS2Compiler
 			if (!IsBooleanExpr(statement.Condition)) _bytecode.Emit(Op.ConvToFloat);
 			_bytecode.Emit(Op.If);
 			var breakLoc = _bytecode.EmitNumberOperandPlaceholder();
+			List<int> continuePatches = [];
+			_continuePatches.Push(continuePatches);
 			_bytecode.Emit(Op.CmdCall);
 			foreach (var stmt in statement.Body) EmitStatement(stmt);
+			foreach (var patch in continuePatches) _bytecode.PatchShort(patch, _bytecode.OpIndex);
 			Emit(statement.Post);
 			_bytecode.Emit(Op.SetIndex);
 			_bytecode.EmitDynamicNumber(start);
+			_continuePatches.Pop();
 			_bytecode.PatchShort(breakLoc, _bytecode.OpIndex);
 		}
 
@@ -652,11 +663,15 @@ internal static class GS2Compiler
 			var start = _bytecode.OpIndex;
 			_bytecode.Emit(Op.Foreach);
 			var breakLoc = _bytecode.EmitNumberOperandPlaceholder();
+			List<int> continuePatches = [];
+			_continuePatches.Push(continuePatches);
 			_bytecode.Emit(Op.CmdCall);
 			foreach (var stmt in statement.Body) EmitStatement(stmt);
+			foreach (var patch in continuePatches) _bytecode.PatchShort(patch, _bytecode.OpIndex);
 			_bytecode.Emit(Op.Inc);
 			_bytecode.Emit(Op.SetIndex);
 			_bytecode.EmitDynamicNumber(start);
+			_continuePatches.Pop();
 			_bytecode.PatchShort(breakLoc, _bytecode.OpIndex);
 			_bytecode.Emit(Op.IndexDec);
 		}
@@ -668,13 +683,17 @@ internal static class GS2Compiler
 			if (!IsBooleanExpr(statement.Condition)) _bytecode.Emit(Op.ConvToFloat);
 			List<int> breakPatches = [];
 			_breakPatches.Push(breakPatches);
+			List<int> continuePatches = [];
+			_continuePatches.Push(continuePatches);
 			_bytecode.Emit(Op.If);
 			var breakLoc = _bytecode.EmitNumberOperandPlaceholder();
 			breakPatches.Add(breakLoc);
 			_bytecode.Emit(Op.CmdCall);
 			foreach (var stmt in statement.Body) EmitStatement(stmt);
+			foreach (var patch in continuePatches) _bytecode.PatchShort(patch, _bytecode.OpIndex);
 			_bytecode.Emit(Op.SetIndex);
 			_bytecode.EmitDynamicNumber(start);
+			_continuePatches.Pop();
 			_breakPatches.Pop();
 			foreach (var patch in breakPatches) _bytecode.PatchShort(patch, _bytecode.OpIndex);
 		}
@@ -729,6 +748,13 @@ internal static class GS2Compiler
 			if (_breakPatches.Count == 0) return;
 			_bytecode.Emit(Op.SetIndex);
 			_breakPatches.Peek().Add(_bytecode.EmitNumberOperandPlaceholder());
+		}
+
+		private void EmitContinue()
+		{
+			if (_continuePatches.Count == 0) return;
+			_bytecode.Emit(Op.SetIndex);
+			_continuePatches.Peek().Add(_bytecode.EmitNumberOperandPlaceholder());
 		}
 
 		private void EmitNewStatement(NewStmt statement)
@@ -1412,6 +1438,7 @@ internal static class GS2Compiler
 				"case" => TokenType.Case,
 				"default" => TokenType.Default,
 				"break" => TokenType.Break,
+				"continue" => TokenType.Continue,
 				"true" => TokenType.True,
 				"false" => TokenType.False,
 				"null" => TokenType.Null,
@@ -1450,7 +1477,7 @@ internal static class GS2Compiler
 		private static bool IsIdentPart(char c) => char.IsLetterOrDigit(c) || c is '_' or '$';
 	}
 
-	private enum TokenType { Unknown, End, Identifier, Number, String, Const, Enum, Function, Public, Return, If, Else, ElseIf, For, While, With, New, In, Switch, Case, Default, Break, True, False, Null, Assign, AddAssign, SubAssign, MulAssign, DivAssign, ModAssign, CatAssign, Semicolon, Comma, Colon, Question, Dot, Scope, LeftBrace, RightBrace, LeftParen, RightParen, LeftBracket, RightBracket, Minus, Plus, Star, Slash, Percent, Caret, At, Not, Equal, NotEqual, Less, LessEqual, Greater, GreaterEqual, And, Or, BitAnd, BitOr, ShiftLeft, ShiftRight, Increment, Decrement }
+	private enum TokenType { Unknown, End, Identifier, Number, String, Const, Enum, Function, Public, Return, If, Else, ElseIf, For, While, With, New, In, Switch, Case, Default, Break, Continue, True, False, Null, Assign, AddAssign, SubAssign, MulAssign, DivAssign, ModAssign, CatAssign, Semicolon, Comma, Colon, Question, Dot, Scope, LeftBrace, RightBrace, LeftParen, RightParen, LeftBracket, RightBracket, Minus, Plus, Star, Slash, Percent, Caret, At, Not, Equal, NotEqual, Less, LessEqual, Greater, GreaterEqual, And, Or, BitAnd, BitOr, ShiftLeft, ShiftRight, Increment, Decrement }
 	private sealed record Token(TokenType Type, string Text, int Line, int Column) { public string LineText { get; init; } = ""; }
 	private sealed record ProgramNode(Dictionary<string, Expr> Constants, Dictionary<string, Dictionary<string, int>> Enums, List<FunctionNode> Functions, List<Stmt> TopLevelStatements);
 	private sealed record FunctionNode(string Name, string? ObjectName, bool Public, List<Expr> Args, List<Stmt> Body);
@@ -1466,6 +1493,7 @@ internal static class GS2Compiler
 	private sealed record SwitchStmt(Expr Expression, List<SwitchCase> Cases) : Stmt;
 	private sealed record NewStmt(string TypeName, List<Expr> Args, List<Stmt> Body) : Stmt;
 	private sealed record BreakStmt : Stmt;
+	private sealed record ContinueStmt : Stmt;
 	private sealed record SwitchCase(List<Expr?> Labels, List<Stmt> Body);
 	private abstract record Expr;
 	private sealed record BinaryExpr(Expr Left, string Op, Expr Right) : Expr;

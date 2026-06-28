@@ -10,7 +10,7 @@ enumMember: IDENTIFIER (ASSIGN expression)?;
 functionDeclaration: PUBLIC? FUNCTION qualifiedName LPAREN parameterList? RPAREN block;
 parameterList: IDENTIFIER (COMMA IDENTIFIER)* COMMA?;
 block: LBRACE statement* RBRACE;
-statement: block | ifStatement | forStatement | whileStatement | switchStatement | withStatement | newStatement | returnStatement | breakStatement | expressionStatement | SEMI;
+statement: block | ifStatement | forStatement | whileStatement | switchStatement | withStatement | newStatement | returnStatement | breakStatement | continueStatement | expressionStatement | SEMI;
 ifStatement: IF LPAREN expression RPAREN statement (ELSE statement)?;
 forStatement: FOR LPAREN expression? SEMI expression? SEMI expression? RPAREN statement | FOR LPAREN IDENTIFIER COLON expression RPAREN statement;
 whileStatement: WHILE LPAREN expression RPAREN statement;
@@ -20,6 +20,7 @@ withStatement: WITH LPAREN expression RPAREN statement;
 newStatement: NEW qualifiedName LPAREN argumentList? RPAREN block?;
 returnStatement: RETURN expression? SEMI?;
 breakStatement: BREAK SEMI?;
+continueStatement: CONTINUE SEMI?;
 expressionStatement: expression SEMI?;
 expression: expression QUESTION expression COLON expression
 	| expression op=(MUL | DIV | MOD) expression
@@ -63,6 +64,7 @@ WITH: 'with';
 NEW: 'new';
 RETURN: 'return';
 BREAK: 'break';
+CONTINUE: 'continue';
 IN: 'in';
 TRUE: 'true';
 FALSE: 'false';
