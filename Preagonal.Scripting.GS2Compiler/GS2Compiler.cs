@@ -663,7 +663,7 @@ internal static class GS2Compiler
 					if (binary.Op == "&" && binary.Left is not NumberExpr) _bytecode.Emit(Op.ConvToFloat);
 					Emit(binary.Right);
 					if ((IsNumericOp(binary.Op) || IsComparisonOp(binary.Op)) && NeedsNumericConversion(binary.Right)) _bytecode.Emit(Op.ConvToFloat);
-					if (binary.Op == "@") _bytecode.Emit(Op.ConvToString);
+					if (binary.Op == "@" && binary.Right is not StringExpr) _bytecode.Emit(Op.ConvToString);
 					_bytecode.Emit(BinaryOpcode(binary.Op));
 					break;
 				case MemberExpr member:
