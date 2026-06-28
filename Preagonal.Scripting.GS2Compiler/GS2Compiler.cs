@@ -866,14 +866,14 @@ internal static class GS2Compiler
 					break;
 				case MemberExpr member:
 					Emit(member.Object);
-					if (member.Object is not IdentifierExpr { Name: "temp" } and not ArrayIndexExpr) _bytecode.Emit(Op.ConvToObject);
+					if (NeedsObjectConversion(member.Object)) _bytecode.Emit(Op.ConvToObject);
 					_bytecode.Emit(Op.TypeVar);
 					_bytecode.EmitDynamicStringIndex(_bytecode.GetString(member.Name));
 					_bytecode.Emit(Op.MemberAccess);
 					break;
 				case DynamicMemberExpr member:
 					Emit(member.Object);
-					if (member.Object is not IdentifierExpr { Name: "temp" } and not ArrayIndexExpr) _bytecode.Emit(Op.ConvToObject);
+					if (NeedsObjectConversion(member.Object)) _bytecode.Emit(Op.ConvToObject);
 					Emit(member.Name);
 					if (member.Name is not StringExpr) _bytecode.Emit(Op.ConvToString);
 					_bytecode.Emit(Op.MemberAccess);
@@ -892,6 +892,21 @@ internal static class GS2Compiler
 					break;
 				case IdentifierExpr { Name: "temp" }:
 					_bytecode.Emit(Op.Temp);
+					break;
+				case IdentifierExpr { Name: "thiso" }:
+					_bytecode.Emit(Op.Thiso);
+					break;
+				case IdentifierExpr { Name: "player" }:
+					_bytecode.Emit(Op.Player);
+					break;
+				case IdentifierExpr { Name: "playero" }:
+					_bytecode.Emit(Op.Playero);
+					break;
+				case IdentifierExpr { Name: "level" }:
+					_bytecode.Emit(Op.Level);
+					break;
+				case IdentifierExpr { Name: "pi" }:
+					_bytecode.Emit(Op.Pi);
 					break;
 				case IdentifierExpr id:
 					_bytecode.Emit(Op.TypeVar);
@@ -941,6 +956,14 @@ internal static class GS2Compiler
 					_bytecode.Emit(Op.Dec);
 					_bytecode.Emit(Op.IndexDec);
 					break;
+				case CallExpr call when BuiltInCalls.TryGetValue(call.Name, out var builtIn):
+					for (var i = call.Args.Count - 1; i >= 0; --i)
+					{
+						Emit(call.Args[i]);
+						if (!IsNumberExpr(call.Args[i])) _bytecode.Emit(Op.ConvToFloat);
+					}
+					_bytecode.Emit(builtIn);
+					break;
 				case CallExpr call:
 					_bytecode.Emit(Op.TypeArray);
 					for (var i = call.Args.Count - 1; i >= 0; --i) Emit(call.Args[i]);
@@ -952,7 +975,7 @@ internal static class GS2Compiler
 					_bytecode.Emit(Op.TypeArray);
 					for (var i = call.Args.Count - 1; i >= 0; --i) Emit(call.Args[i]);
 					Emit(call.Object);
-					if (call.Object is not IdentifierExpr { Name: "temp" }) _bytecode.Emit(Op.ConvToObject);
+					if (NeedsObjectConversion(call.Object)) _bytecode.Emit(Op.ConvToObject);
 					_bytecode.Emit(Op.TypeVar);
 					_bytecode.EmitDynamicStringIndex(_bytecode.GetString(call.Name));
 					_bytecode.Emit(Op.MemberAccess);
@@ -1021,11 +1044,29 @@ internal static class GS2Compiler
 
 		private static bool IsCompoundAssign(string op) => op is "+=" or "-=" or "*=" or "/=" or "%=" or "@=";
 
+		private static readonly Dictionary<string, Op> BuiltInCalls = new(StringComparer.Ordinal)
+		{
+			["sin"] = Op.Sin,
+			["char"] = Op.Char,
+			["cos"] = Op.Cos,
+			["arctan"] = Op.Arctan,
+			["vecx"] = Op.Vecx,
+			["vecy"] = Op.Vecy,
+			["abs"] = Op.Abs
+		};
+
 		private static bool IsNumericOp(string op) => op is "+" or "-" or "*" or "/" or "%" or "^";
 
 		private static bool IsComparisonOp(string op) => op is "<" or "<=" or "=<" or ">" or ">=" or "=>";
 
 		private static bool NeedsNumericConversion(Expr expr) => expr is IdentifierExpr or MemberExpr or DynamicMemberExpr or DynamicVarExpr or CallExpr;
+
+		private static bool NeedsObjectConversion(Expr expr) => expr switch
+		{
+			IdentifierExpr { Name: "this" or "thiso" or "player" or "playero" or "level" or "temp" } => false,
+			ArrayIndexExpr => false,
+			_ => true
+		};
 
 		private static bool IsNumberExpr(Expr expr) => expr is NumberExpr or UnaryExpr { Op: "-", Expression: NumberExpr };
 
@@ -1456,6 +1497,7 @@ internal static class GS2Compiler
 		TypeTrue = 24,
 		TypeFalse = 25,
 		TypeNull = 26,
+		Pi = 27,
 		SwapLastOps = 31,
 		IndexDec = 32,
 		ConvToFloat = 33,
@@ -1489,8 +1531,15 @@ internal static class GS2Compiler
 		BitAnd = 77,
 		InRange = 80,
 		InObj = 81,
+		Abs = 86,
+		Sin = 88,
+		Cos = 89,
+		Arctan = 90,
+		Vecx = 97,
+		Vecy = 98,
 		ShiftLeft = 101,
 		ShiftRight = 102,
+		Char = 103,
 		Join = 113,
 		Array = 131,
 		ArrayAssign = 132,
@@ -1503,6 +1552,10 @@ internal static class GS2Compiler
 		InlineConditional = 44,
 		Ret = 7,
 		This = 180,
+		Thiso = 181,
+		Player = 182,
+		Playero = 183,
+		Level = 184,
 		Temp = 189
 	}
 }
