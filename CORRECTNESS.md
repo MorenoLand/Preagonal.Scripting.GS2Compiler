@@ -2,7 +2,7 @@
 
 ## 2026-06-28
 
-- Test suite: 208/208 xUnit tests passing.
+- Test suite: 209/209 xUnit tests passing.
 - Fixture bytecode parity: 32 tests passing.
 - Advanced corpus compile coverage: 155/155 scripts compile through xUnit.
 - Advanced bytecode parity: 39/155 SHA-256 matches and 41/155 byte-size matches against copied C++ advanced baselines.

@@ -47,6 +47,15 @@ public class AntlrGrammarTests
 		Assert.Equal(["hello", "x"], visibleTokens.Select(token => token.Text).ToArray());
 	}
 
+	[Fact]
+	public void Given_hex_integer_When_lexed_Then_text_is_decimal()
+	{
+		var lexer = new GS2Lexer(CharStreams.fromString("0x10"));
+		var token = lexer.GetAllTokens().Single(token => token.Channel == Lexer.DefaultTokenChannel);
+		Assert.Equal(GS2Lexer.NUMBER, token.Type);
+		Assert.Equal("16", token.Text);
+	}
+
 	private static void AssertParses(string code)
 	{
 		var input = CharStreams.fromString(code);
