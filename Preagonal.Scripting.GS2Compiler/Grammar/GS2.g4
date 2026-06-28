@@ -37,7 +37,7 @@ expression: expression QUESTION expression COLON expression
 	| expression op=(ASSIGN | WALRUS | PLUS_ASSIGN | MINUS_ASSIGN | MUL_ASSIGN | DIV_ASSIGN | MOD_ASSIGN | CONCAT_ASSIGN) expression
 	| expression op=(CONCAT | SPC | NL | TAB) expression
 	| prefixExpression;
-prefixExpression: op=(INC | DEC | NOT | MINUS | CONCAT) prefixExpression | postfixExpression;
+prefixExpression: op=(INC | DEC | NOT | MINUS | CONCAT | BIT_INVERT) prefixExpression | postfixExpression;
 postfixExpression: primaryExpression postfixPart*;
 postfixPart: LPAREN argumentList? RPAREN | DOT IDENTIFIER | DOT LPAREN expression RPAREN | LBRACK argumentList? RBRACK | op=(INC | DEC);
 primaryExpression: NUMBER | STRING | CHAR | TRUE | FALSE | NULL | castExpression | qualifiedName | arrayLiteral | lambdaExpression | newExpression | LPAREN expression RPAREN;
@@ -104,6 +104,7 @@ DIV: '/';
 MOD: '%';
 CONCAT: '@';
 NOT: '!';
+BIT_INVERT: '~';
 BAND: '&';
 BOR: '|';
 BXOR: '^' | 'xor';

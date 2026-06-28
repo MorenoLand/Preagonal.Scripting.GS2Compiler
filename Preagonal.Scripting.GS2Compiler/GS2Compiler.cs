@@ -417,6 +417,7 @@ internal static class GS2Compiler
 			if (Match(TokenType.At)) return new DynamicVarExpr(ParseUnary());
 			if (Match(TokenType.Minus)) return new UnaryExpr("-", ParseUnary());
 			if (Match(TokenType.Not)) return new UnaryExpr("!", ParseUnary());
+			if (Match(TokenType.BitInvert)) return new UnaryExpr("~", ParseUnary());
 			return ParsePostfix();
 		}
 
@@ -995,6 +996,11 @@ internal static class GS2Compiler
 					if (!IsBooleanExpr(notValue)) _bytecode.Emit(Op.ConvToFloat);
 					_bytecode.Emit(Op.Not);
 					break;
+				case UnaryExpr { Op: "~", Expression: var invertValue }:
+					Emit(invertValue);
+					if (!IsNumberExpr(invertValue)) _bytecode.Emit(Op.ConvToFloat);
+					_bytecode.Emit(Op.BitInvert);
+					break;
 				case UnaryExpr { Op: "++", Expression: var incValue }:
 					Emit(incValue);
 					_bytecode.Emit(Op.Inc);
@@ -1412,6 +1418,7 @@ internal static class GS2Compiler
 				'^' => Make(TokenType.Caret, "^"),
 				'@' => Make(TokenType.At, "@"),
 				'!' => Make(TokenType.Not, "!"),
+				'~' => Make(TokenType.BitInvert, "~"),
 				'<' => Make(TokenType.Less, "<"),
 				'>' => Make(TokenType.Greater, ">"),
 				'&' => Make(TokenType.BitAnd, "&"),
@@ -1506,7 +1513,7 @@ internal static class GS2Compiler
 		private static bool IsIdentPart(char c) => char.IsLetterOrDigit(c) || c is '_' or '$';
 	}
 
-	private enum TokenType { Unknown, End, Identifier, Number, String, Const, Enum, Function, Public, Return, If, Else, ElseIf, For, While, With, New, In, Switch, Case, Default, Break, Continue, IntCast, FloatCast, Translate, True, False, Null, Assign, AddAssign, SubAssign, MulAssign, DivAssign, ModAssign, CatAssign, Semicolon, Comma, Colon, Question, Dot, Scope, LeftBrace, RightBrace, LeftParen, RightParen, LeftBracket, RightBracket, Minus, Plus, Star, Slash, Percent, Caret, At, Not, Equal, NotEqual, Less, LessEqual, Greater, GreaterEqual, And, Or, BitAnd, BitOr, ShiftLeft, ShiftRight, Increment, Decrement }
+	private enum TokenType { Unknown, End, Identifier, Number, String, Const, Enum, Function, Public, Return, If, Else, ElseIf, For, While, With, New, In, Switch, Case, Default, Break, Continue, IntCast, FloatCast, Translate, True, False, Null, Assign, AddAssign, SubAssign, MulAssign, DivAssign, ModAssign, CatAssign, Semicolon, Comma, Colon, Question, Dot, Scope, LeftBrace, RightBrace, LeftParen, RightParen, LeftBracket, RightBracket, Minus, Plus, Star, Slash, Percent, Caret, At, Not, BitInvert, Equal, NotEqual, Less, LessEqual, Greater, GreaterEqual, And, Or, BitAnd, BitOr, ShiftLeft, ShiftRight, Increment, Decrement }
 	private sealed record Token(TokenType Type, string Text, int Line, int Column) { public string LineText { get; init; } = ""; }
 	private sealed record ProgramNode(Dictionary<string, Expr> Constants, Dictionary<string, Dictionary<string, int>> Enums, List<FunctionNode> Functions, List<Stmt> TopLevelStatements);
 	private sealed record FunctionNode(string Name, string? ObjectName, bool Public, List<Expr> Args, List<Stmt> Body);
@@ -1599,6 +1606,7 @@ internal static class GS2Compiler
 		Gte = 75,
 		BitOr = 76,
 		BitAnd = 77,
+		BitInvert = 79,
 		InRange = 80,
 		InObj = 81,
 		Abs = 86,
