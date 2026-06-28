@@ -82,6 +82,6 @@ RBRACE: '}';
 LBRACK: '[';
 RBRACK: ']';
 NUMBER: '0' [xX] [0-9a-fA-F]+ | [0-9]+ ('.' [0-9]*)? | '.' [0-9]+;
-STRING: '"' ('\\' . | ~["\\])* '"';
-CHAR: '\'' ('\\' . | ~['\\])* '\'';
+STRING: '"' ('\\' . | ~["\\])* '"' { Text = Text.Substring(1, Text.Length - 2); };
+CHAR: '\'' ('\\' . | ~['\\])* '\'' { Text = Text.Substring(1, Text.Length - 2); } -> type(STRING);
 IDENTIFIER: [A-Za-z_$] [A-Za-z0-9_$]* ('::' [A-Za-z_$] [A-Za-z0-9_$]*)*;

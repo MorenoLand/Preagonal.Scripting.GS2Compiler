@@ -41,7 +41,7 @@ expression: expression QUESTION expression COLON expression
 prefixExpression: op=(INC | DEC | NOT | MINUS | CONCAT | BIT_INVERT) prefixExpression | postfixExpression;
 postfixExpression: primaryExpression postfixPart*;
 postfixPart: LPAREN argumentList? RPAREN | DOT IDENTIFIER | DOT LPAREN expression RPAREN | LBRACK argumentList? RBRACK | op=(INC | DEC);
-primaryExpression: NUMBER | STRING | CHAR | TRUE | FALSE | NULL | castExpression | qualifiedName | arrayLiteral | lambdaExpression | newExpression | LPAREN expression RPAREN;
+primaryExpression: NUMBER | STRING | TRUE | FALSE | NULL | castExpression | qualifiedName | arrayLiteral | lambdaExpression | newExpression | LPAREN expression RPAREN;
 castExpression: INT_CAST LPAREN expression RPAREN | FLOAT_CAST LPAREN expression RPAREN | TRANSLATE LPAREN expression RPAREN;
 arrayLiteral: LBRACE argumentList? RBRACE;
 lambdaExpression: FUNCTION LPAREN argumentList? RPAREN statement;

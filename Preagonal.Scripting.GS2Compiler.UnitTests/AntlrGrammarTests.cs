@@ -38,6 +38,15 @@ public class AntlrGrammarTests
 		Assert.Equal("Gui::Control", visibleTokens[^1].Text);
 	}
 
+	[Fact]
+	public void Given_string_and_char_constants_When_lexed_Then_text_is_unquoted()
+	{
+		var lexer = new GS2Lexer(CharStreams.fromString("\"hello\" 'x'"));
+		var visibleTokens = lexer.GetAllTokens().Where(token => token.Channel == Lexer.DefaultTokenChannel).ToArray();
+		Assert.Equal([GS2Lexer.STRING, GS2Lexer.STRING], visibleTokens.Select(token => token.Type).ToArray());
+		Assert.Equal(["hello", "x"], visibleTokens.Select(token => token.Text).ToArray());
+	}
+
 	private static void AssertParses(string code)
 	{
 		var input = CharStreams.fromString(code);
