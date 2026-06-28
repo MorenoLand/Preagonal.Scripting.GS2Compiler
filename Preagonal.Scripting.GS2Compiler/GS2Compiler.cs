@@ -14,8 +14,8 @@ internal static class GS2Compiler
 		if (parser.ErrorMessage != null) return new() { Success = false, ErrMsg = parser.ErrorMessage, ByteCode = [] };
 		var bytecode = new BytecodeWriter();
 		var emitter = new Emitter(bytecode, program.Constants, program.Enums);
-		emitter.EmitTopLevel(program.TopLevelStatements);
 		foreach (var function in program.Functions) emitter.EmitFunction(function);
+		emitter.EmitTopLevel(program.TopLevelStatements);
 		var result = bytecode.ToArray();
 		return new() { Success = true, ErrMsg = null, ByteCode = withHeader ? Header.Wrap(result, type, name) : result };
 	}
