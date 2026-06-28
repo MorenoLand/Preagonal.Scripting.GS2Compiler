@@ -118,6 +118,7 @@ internal static class GS2Compiler
 
 		private Stmt ParseStatement()
 		{
+			if (Match(TokenType.Semicolon)) return new BlockStmt([]);
 			if (_current.Type == TokenType.LeftBrace) return new BlockStmt(ParseBlock());
 			if (Match(TokenType.New)) return ParseNewStatement();
 			if (Match(TokenType.Return))
