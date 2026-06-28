@@ -347,7 +347,11 @@ internal static class GS2Compiler
 		private Expr ParsePrimary()
 		{
 			if (Match(TokenType.Number)) return new NumberExpr(_previous.Text);
-			if (Match(TokenType.String)) return new StringExpr(_previous.Text);
+			if (Match(TokenType.String))
+			{
+				if (_previous.Text == "\\") Error("malformed input");
+				return new StringExpr(_previous.Text);
+			}
 			if (Match(TokenType.True)) return new BoolExpr(true);
 			if (Match(TokenType.False)) return new BoolExpr(false);
 			if (Match(TokenType.Null)) return new NullExpr();
