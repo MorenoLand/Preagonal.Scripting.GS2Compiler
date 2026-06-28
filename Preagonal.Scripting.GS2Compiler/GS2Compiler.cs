@@ -575,6 +575,7 @@ internal static class GS2Compiler
 		private readonly Dictionary<string, Dictionary<string, int>> _enums;
 		private readonly Stack<List<int>> _breakPatches = new();
 		private readonly Stack<List<int>> _continuePatches = new();
+		private readonly Stack<List<int>> _conditionFailPatches = new();
 		private int _newObjectCount;
 
 		public Emitter(BytecodeWriter bytecode, Dictionary<string, Expr> constants, Dictionary<string, Dictionary<string, int>> enums)
@@ -641,12 +642,17 @@ internal static class GS2Compiler
 
 		private void EmitIf(IfStmt statement)
 		{
-			Emit(statement.Condition, false, false, 0);
+			List<int> conditionFailPatches = [];
+			_conditionFailPatches.Push(conditionFailPatches);
+			Emit(statement.Condition, false, false, 0, true);
+			_conditionFailPatches.Pop();
 			if (!IsBooleanExpr(statement.Condition)) _bytecode.Emit(Op.ConvToFloat);
 			_bytecode.Emit(Op.If);
 			var failLoc = _bytecode.EmitNumberOperandPlaceholder();
 			foreach (var stmt in statement.ThenBody) EmitStatement(stmt);
-			_bytecode.PatchShort(failLoc, _bytecode.OpIndex + (statement.ElseBody.Count > 0 ? 1 : 0));
+			var failTarget = _bytecode.OpIndex + (statement.ElseBody.Count > 0 ? 1 : 0);
+			_bytecode.PatchShort(failLoc, failTarget);
+			foreach (var patch in conditionFailPatches) _bytecode.PatchShort(patch, failTarget);
 			if (statement.ElseBody.Count > 0)
 			{
 				_bytecode.Emit(Op.SetIndex);
@@ -660,7 +666,10 @@ internal static class GS2Compiler
 		{
 			if (statement.Init != null) Emit(statement.Init);
 			var start = _bytecode.OpIndex;
-			Emit(statement.Condition, false, false, 0);
+			List<int> conditionFailPatches = [];
+			_conditionFailPatches.Push(conditionFailPatches);
+			Emit(statement.Condition, false, false, 0, true);
+			_conditionFailPatches.Pop();
 			if (!IsBooleanExpr(statement.Condition)) _bytecode.Emit(Op.ConvToFloat);
 			_bytecode.Emit(Op.If);
 			var breakLoc = _bytecode.EmitNumberOperandPlaceholder();
@@ -674,6 +683,7 @@ internal static class GS2Compiler
 			_bytecode.EmitDynamicNumber(start);
 			_continuePatches.Pop();
 			_bytecode.PatchShort(breakLoc, _bytecode.OpIndex);
+			foreach (var patch in conditionFailPatches) _bytecode.PatchShort(patch, _bytecode.OpIndex);
 		}
 
 		private void EmitForEach(ForEachStmt statement)
@@ -702,7 +712,10 @@ internal static class GS2Compiler
 		private void EmitWhile(WhileStmt statement)
 		{
 			var start = _bytecode.OpIndex;
-			Emit(statement.Condition, false, false, 0);
+			List<int> conditionFailPatches = [];
+			_conditionFailPatches.Push(conditionFailPatches);
+			Emit(statement.Condition, false, false, 0, true);
+			_conditionFailPatches.Pop();
 			if (!IsBooleanExpr(statement.Condition)) _bytecode.Emit(Op.ConvToFloat);
 			List<int> breakPatches = [];
 			_breakPatches.Push(breakPatches);
@@ -719,6 +732,7 @@ internal static class GS2Compiler
 			_continuePatches.Pop();
 			_breakPatches.Pop();
 			foreach (var patch in breakPatches) _bytecode.PatchShort(patch, _bytecode.OpIndex);
+			foreach (var patch in conditionFailPatches) _bytecode.PatchShort(patch, _bytecode.OpIndex);
 		}
 
 		private void EmitWith(WithStmt statement)
@@ -811,7 +825,7 @@ internal static class GS2Compiler
 			_newObjectCount--;
 		}
 
-		private void Emit(Expr expr, bool copyAssignmentTarget, bool logicalInline, int suppressedLogicalPatchOffset)
+		private void Emit(Expr expr, bool copyAssignmentTarget, bool logicalInline, int suppressedLogicalPatchOffset, bool controlLogical = false)
 		{
 			switch (expr)
 			{
@@ -864,14 +878,15 @@ internal static class GS2Compiler
 					_bytecode.Emit(Op.Assign);
 					break;
 				case BinaryExpr { Op: "&&" or "||" } logical:
-					Emit(logical.Left, false, false, logical.Left is BinaryExpr { Op: "&&" or "||" } ? 1 : 0);
+					Emit(logical.Left, false, false, logical.Left is BinaryExpr { Op: "&&" or "||" } ? 1 : 0, controlLogical);
 					if (!IsBooleanExpr(logical.Left)) _bytecode.Emit(Op.ConvToFloat);
-					_bytecode.Emit(logical.Op == "&&" ? Op.And : Op.Or);
+					_bytecode.Emit(logical.Op == "&&" && controlLogical ? Op.If : logical.Op == "&&" ? Op.And : Op.Or);
 					var loc = _bytecode.EmitNumberOperandPlaceholder();
 					Emit(logical.Right, false, false, 0);
 					if (!IsBooleanExpr(logical.Right)) _bytecode.Emit(Op.ConvToFloat);
 					if (logicalInline) _bytecode.Emit(Op.InlineConditional);
-					_bytecode.PatchShort(loc, _bytecode.OpIndex - (logicalInline ? 1 : 0) + (!logicalInline ? suppressedLogicalPatchOffset : 0));
+					if (logical.Op == "&&" && controlLogical && _conditionFailPatches.Count > 0) _conditionFailPatches.Peek().Add(loc);
+					else _bytecode.PatchShort(loc, _bytecode.OpIndex - (logicalInline ? 1 : 0) + (!logicalInline ? suppressedLogicalPatchOffset : 0));
 					break;
 				case TernaryExpr ternary:
 					Emit(ternary.Condition, false, false, 0);
