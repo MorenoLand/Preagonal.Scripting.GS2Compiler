@@ -45,7 +45,8 @@ primaryExpression: NUMBER | STRING | CHAR | TRUE | FALSE | NULL | castExpression
 castExpression: INT_CAST LPAREN expression RPAREN | FLOAT_CAST LPAREN expression RPAREN | TRANSLATE LPAREN expression RPAREN;
 arrayLiteral: LBRACE argumentList? RBRACE;
 lambdaExpression: FUNCTION LPAREN argumentList? RPAREN statement;
-newExpression: NEW qualifiedName LPAREN argumentList? RPAREN | NEW LBRACK numberList RBRACK;
+newExpression: NEW qualifiedName LPAREN argumentList? RPAREN | NEW arrayRank+;
+arrayRank: LBRACK NUMBER RBRACK;
 rangeExpression: BOR expression (COMMA expression)? BOR | expression;
 argumentList: expression (COMMA expression)* COMMA?;
 numberList: NUMBER (COMMA NUMBER)* COMMA?;
