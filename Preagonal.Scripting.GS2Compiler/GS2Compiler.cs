@@ -173,7 +173,7 @@ internal static class GS2Compiler
 
 		private Stmt ParseNewStatement()
 		{
-			var typeName = Expect(TokenType.Identifier).Text;
+			var typeName = ParseQualifiedIdentifierName();
 			Expect(TokenType.LeftParen);
 			List<Expr> args = [];
 			if (_current.Type != TokenType.RightParen)
@@ -453,7 +453,7 @@ internal static class GS2Compiler
 					while (_current.Type == TokenType.LeftBracket);
 					return new NewArrayExpr(dimensions);
 				}
-				var typeName = Expect(TokenType.Identifier).Text;
+				var typeName = ParseQualifiedIdentifierName();
 				Expect(TokenType.LeftParen);
 				List<Expr> args = [];
 				if (_current.Type != TokenType.RightParen)
@@ -512,6 +512,13 @@ internal static class GS2Compiler
 			}
 			Error("malformed input");
 			return new NumberExpr("0");
+		}
+
+		private string ParseQualifiedIdentifierName()
+		{
+			var name = Expect(TokenType.Identifier).Text;
+			while (Match(TokenType.Scope)) name += "::" + Expect(TokenType.Identifier).Text;
+			return name;
 		}
 
 		private Expr ParseCast(string type)
