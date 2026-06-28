@@ -14,8 +14,11 @@ internal static class GS2Compiler
 		if (parser.ErrorMessage != null) return new() { Success = false, ErrMsg = parser.ErrorMessage, ByteCode = [] };
 		var bytecode = new BytecodeWriter();
 		var emitter = new Emitter(bytecode, program.Constants, program.Enums);
-		foreach (var function in program.Functions) emitter.EmitFunction(function);
-		emitter.EmitTopLevel(program.TopLevelStatements);
+		foreach (var item in program.Items)
+		{
+			if (item is FunctionItem function) emitter.EmitFunction(function.Function);
+			else if (item is StatementItem statement) emitter.EmitStatement(statement.Statement);
+		}
 		var result = bytecode.ToArray();
 		return new() { Success = true, ErrMsg = null, ByteCode = withHeader ? Header.Wrap(result, type, name) : result };
 	}
@@ -39,16 +42,16 @@ internal static class GS2Compiler
 		public ProgramNode Parse()
 		{
 			List<FunctionNode> functions = [];
-			List<Stmt> topLevelStatements = [];
+			List<ProgramItem> items = [];
 			while (_current.Type != TokenType.End)
 			{
 				if (Match(TokenType.Const)) ParseConst();
 				else if (Match(TokenType.Enum)) ParseEnum();
-				else if (Match(TokenType.Public)) { Expect(TokenType.Function); functions.Add(ParseFunction(true, null)); }
-				else if (Match(TokenType.Function)) functions.Add(ParseFunction(false, null));
-				else topLevelStatements.Add(ParseStatement());
+				else if (Match(TokenType.Public)) { Expect(TokenType.Function); items.Add(new FunctionItem(ParseFunction(true, null))); }
+				else if (Match(TokenType.Function)) items.Add(new FunctionItem(ParseFunction(false, null)));
+				else items.Add(new StatementItem(ParseStatement()));
 			}
-			return new(_constants, _enums, functions, topLevelStatements);
+			return new(_constants, _enums, items);
 		}
 
 		private void ParseConst()
@@ -616,7 +619,7 @@ internal static class GS2Compiler
 
 		private void Emit(Expr expr) => Emit(expr, false, true, 0);
 
-		private void EmitStatement(Stmt statement)
+		public void EmitStatement(Stmt statement)
 		{
 			if (statement is ExprStmt exprStatement)
 			{
@@ -1555,7 +1558,10 @@ internal static class GS2Compiler
 
 	private enum TokenType { Unknown, End, Identifier, Number, String, Const, Enum, Function, Public, Return, If, Else, ElseIf, For, While, With, New, In, Switch, Case, Default, Break, Continue, IntCast, FloatCast, Translate, True, False, Null, Assign, AddAssign, SubAssign, MulAssign, DivAssign, PowAssign, ModAssign, CatAssign, ShiftLeftAssign, ShiftRightAssign, Semicolon, Comma, Colon, Question, Dot, Scope, LeftBrace, RightBrace, LeftParen, RightParen, LeftBracket, RightBracket, Minus, Plus, Star, Slash, Percent, Caret, At, Not, BitInvert, Equal, NotEqual, Less, LessEqual, Greater, GreaterEqual, And, Or, BitAnd, BitOr, BitXor, ShiftLeft, ShiftRight, Increment, Decrement }
 	private sealed record Token(TokenType Type, string Text, int Line, int Column) { public string LineText { get; init; } = ""; }
-	private sealed record ProgramNode(Dictionary<string, Expr> Constants, Dictionary<string, Dictionary<string, int>> Enums, List<FunctionNode> Functions, List<Stmt> TopLevelStatements);
+	private sealed record ProgramNode(Dictionary<string, Expr> Constants, Dictionary<string, Dictionary<string, int>> Enums, List<ProgramItem> Items);
+	private abstract record ProgramItem;
+	private sealed record FunctionItem(FunctionNode Function) : ProgramItem;
+	private sealed record StatementItem(Stmt Statement) : ProgramItem;
 	private sealed record FunctionNode(string Name, string? ObjectName, bool Public, List<Expr> Args, List<Stmt> Body);
 	private abstract record Stmt;
 	private sealed record ExprStmt(Expr Expression) : Stmt;
