@@ -36,7 +36,7 @@ expression: expression QUESTION expression COLON expression
 	| expression AND expression
 	| expression OR expression
 	| expression op=(ASSIGN | WALRUS | PLUS_ASSIGN | MINUS_ASSIGN | MUL_ASSIGN | DIV_ASSIGN | POW_ASSIGN | MOD_ASSIGN | CONCAT_ASSIGN | SHL_ASSIGN | SHR_ASSIGN) expression
-	| expression op=(CONCAT | SPC | NL | TAB) expression
+	| expression CONCAT expression
 	| prefixExpression;
 prefixExpression: op=(INC | DEC | NOT | MINUS | CONCAT | BIT_INVERT) prefixExpression | postfixExpression;
 postfixExpression: primaryExpression postfixPart*;

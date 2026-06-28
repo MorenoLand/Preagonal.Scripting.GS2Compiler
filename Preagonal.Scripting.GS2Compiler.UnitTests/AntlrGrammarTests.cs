@@ -31,8 +31,10 @@ public class AntlrGrammarTests
 	{
 		var input = CharStreams.fromString(":= =< => <> xor SPC NL TAB <<= >>= << >> @= |= &=");
 		var lexer = new GS2Lexer(input);
-		var tokens = lexer.GetAllTokens().Where(token => token.Channel == Lexer.DefaultTokenChannel).Select(token => token.Type).ToArray();
-		Assert.Equal([GS2Lexer.WALRUS, GS2Lexer.LTE_ALT, GS2Lexer.GTE_ALT, GS2Lexer.NEQ_ALT, GS2Lexer.BXOR, GS2Lexer.SPC, GS2Lexer.NL, GS2Lexer.TAB, GS2Lexer.SHL_ASSIGN, GS2Lexer.SHR_ASSIGN, GS2Lexer.SHL, GS2Lexer.SHR, GS2Lexer.CONCAT_ASSIGN, GS2Lexer.BWOR_ASSIGN, GS2Lexer.BWAND_ASSIGN], tokens);
+		var visibleTokens = lexer.GetAllTokens().Where(token => token.Channel == Lexer.DefaultTokenChannel).ToArray();
+		var tokens = visibleTokens.Select(token => token.Type).ToArray();
+		Assert.Equal([GS2Lexer.WALRUS, GS2Lexer.LTE_ALT, GS2Lexer.GTE_ALT, GS2Lexer.NEQ_ALT, GS2Lexer.BXOR, GS2Lexer.CONCAT, GS2Lexer.CONCAT, GS2Lexer.CONCAT, GS2Lexer.SHL_ASSIGN, GS2Lexer.SHR_ASSIGN, GS2Lexer.SHL, GS2Lexer.SHR, GS2Lexer.CONCAT_ASSIGN, GS2Lexer.BWOR_ASSIGN, GS2Lexer.BWAND_ASSIGN], tokens);
+		Assert.Equal([" ", "\n", "\t"], visibleTokens.Skip(5).Take(3).Select(token => token.Text).ToArray());
 	}
 
 	private static void AssertParses(string code)
