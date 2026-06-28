@@ -9,7 +9,7 @@ public class BaselineTests
 	public static IEnumerable<object[]> BasicScripts()
 	{
 		var root = FindRepoRoot();
-		foreach (var category in new[] { "basic", "expressions", "functions", "classes" })
+		foreach (var category in new[] { "basic", "expressions", "functions", "classes", "edge_cases" })
 		foreach (var script in Directory.EnumerateFiles(Path.Combine(root, "tests", "scripts", category), "*.gs2", SearchOption.TopDirectoryOnly))
 			yield return [script];
 		yield return [Path.Combine(root, "tests", "scripts", "statements", "01_conditionals.gs2")];
