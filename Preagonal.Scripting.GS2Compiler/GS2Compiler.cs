@@ -248,6 +248,7 @@ internal static class GS2Compiler
 				TokenType.SubAssign => "-=",
 				TokenType.MulAssign => "*=",
 				TokenType.DivAssign => "/=",
+				TokenType.PowAssign => "^=",
 				TokenType.ModAssign => "%=",
 				TokenType.CatAssign => "@=",
 				TokenType.ShiftLeftAssign => "<<=",
@@ -1113,7 +1114,7 @@ internal static class GS2Compiler
 			if (!assignmentTarget) _bytecode.Emit(Op.ArrayMultiDim);
 		}
 
-		private static bool IsCompoundAssign(string op) => op is "+=" or "-=" or "*=" or "/=" or "%=" or "@=" or "<<=" or ">>=";
+		private static bool IsCompoundAssign(string op) => op is "+=" or "-=" or "*=" or "/=" or "^=" or "%=" or "@=" or "<<=" or ">>=";
 
 		private static readonly Dictionary<string, Op> BuiltInCalls = new(StringComparer.Ordinal)
 		{
@@ -1207,6 +1208,7 @@ internal static class GS2Compiler
 		{
 			"<<=" => Op.ShiftLeft,
 			">>=" => Op.ShiftRight,
+			"^=" => Op.Pow,
 			_ => BinaryOpcode(op[0].ToString())
 		};
 	}
@@ -1389,6 +1391,7 @@ internal static class GS2Compiler
 			if (ch == '-' && Peek(1) == '=') { _pos += 2; return Make(TokenType.SubAssign, "-="); }
 			if (ch == '*' && Peek(1) == '=') { _pos += 2; return Make(TokenType.MulAssign, "*="); }
 			if (ch == '/' && Peek(1) == '=') { _pos += 2; return Make(TokenType.DivAssign, "/="); }
+			if (ch == '^' && Peek(1) == '=') { _pos += 2; return Make(TokenType.PowAssign, "^="); }
 			if (ch == '%' && Peek(1) == '=') { _pos += 2; return Make(TokenType.ModAssign, "%="); }
 			if (ch == '@' && Peek(1) == '=') { _pos += 2; return Make(TokenType.CatAssign, "@="); }
 			if (ch == '<' && Peek(1) == '<' && Peek(2) == '=') { _pos += 3; return Make(TokenType.ShiftLeftAssign, "<<="); }
@@ -1524,7 +1527,7 @@ internal static class GS2Compiler
 		private static bool IsIdentPart(char c) => char.IsLetterOrDigit(c) || c is '_' or '$';
 	}
 
-	private enum TokenType { Unknown, End, Identifier, Number, String, Const, Enum, Function, Public, Return, If, Else, ElseIf, For, While, With, New, In, Switch, Case, Default, Break, Continue, IntCast, FloatCast, Translate, True, False, Null, Assign, AddAssign, SubAssign, MulAssign, DivAssign, ModAssign, CatAssign, ShiftLeftAssign, ShiftRightAssign, Semicolon, Comma, Colon, Question, Dot, Scope, LeftBrace, RightBrace, LeftParen, RightParen, LeftBracket, RightBracket, Minus, Plus, Star, Slash, Percent, Caret, At, Not, BitInvert, Equal, NotEqual, Less, LessEqual, Greater, GreaterEqual, And, Or, BitAnd, BitOr, ShiftLeft, ShiftRight, Increment, Decrement }
+	private enum TokenType { Unknown, End, Identifier, Number, String, Const, Enum, Function, Public, Return, If, Else, ElseIf, For, While, With, New, In, Switch, Case, Default, Break, Continue, IntCast, FloatCast, Translate, True, False, Null, Assign, AddAssign, SubAssign, MulAssign, DivAssign, PowAssign, ModAssign, CatAssign, ShiftLeftAssign, ShiftRightAssign, Semicolon, Comma, Colon, Question, Dot, Scope, LeftBrace, RightBrace, LeftParen, RightParen, LeftBracket, RightBracket, Minus, Plus, Star, Slash, Percent, Caret, At, Not, BitInvert, Equal, NotEqual, Less, LessEqual, Greater, GreaterEqual, And, Or, BitAnd, BitOr, ShiftLeft, ShiftRight, Increment, Decrement }
 	private sealed record Token(TokenType Type, string Text, int Line, int Column) { public string LineText { get; init; } = ""; }
 	private sealed record ProgramNode(Dictionary<string, Expr> Constants, Dictionary<string, Dictionary<string, int>> Enums, List<FunctionNode> Functions, List<Stmt> TopLevelStatements);
 	private sealed record FunctionNode(string Name, string? ObjectName, bool Public, List<Expr> Args, List<Stmt> Body);
