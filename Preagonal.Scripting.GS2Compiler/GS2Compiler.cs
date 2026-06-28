@@ -865,6 +865,7 @@ internal static class GS2Compiler
 				case BinaryExpr binary:
 					Emit(binary.Left);
 					if ((IsNumericOp(binary.Op) || IsComparisonOp(binary.Op)) && NeedsNumericConversion(binary.Left)) _bytecode.Emit(Op.ConvToFloat);
+					if (binary.Op == "%" && binary.Left is BinaryExpr { Op: "+=" or "-=" or "*=" or "/=" or "%=" }) _bytecode.Emit(Op.ConvToFloat);
 					if (binary.Op == "&" && binary.Left is not NumberExpr) _bytecode.Emit(Op.ConvToFloat);
 					Emit(binary.Right);
 					if ((IsNumericOp(binary.Op) || IsComparisonOp(binary.Op)) && NeedsNumericConversion(binary.Right)) _bytecode.Emit(Op.ConvToFloat);
