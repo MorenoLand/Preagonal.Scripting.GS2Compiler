@@ -9,7 +9,6 @@ public class AntlrGrammarTests
 	{
 		var root = BaselineTests.FindRepoRoot();
 		yield return [Path.Combine(root, "tests", "scripts", "statements", "03_switch.gs2")];
-		yield return [Path.Combine(root, "tests", "scripts", "advanced", "loginserver", "weapon-Rescripted_IRC_Login3.gs2")];
 		foreach (var fixture in BaselineTests.AdvancedParityScripts()) yield return fixture;
 	}
 
