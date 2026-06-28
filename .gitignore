@@ -3,6 +3,7 @@ obj/
 TestResults/
 tests/reports/
 tests/outputs/
+artifacts/
 *.user
 *.suo
 *.rsuser
