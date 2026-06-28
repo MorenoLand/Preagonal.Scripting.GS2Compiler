@@ -18,6 +18,13 @@ public class BaselineTests
 		yield return [Path.Combine(root, "tests", "scripts", "statements", "04_with.gs2")];
 	}
 
+	public static IEnumerable<object[]> AdvancedScripts()
+	{
+		var root = FindRepoRoot();
+		foreach (var script in Directory.EnumerateFiles(Path.Combine(root, "tests", "scripts", "advanced"), "*.gs2", SearchOption.AllDirectories))
+			yield return [script];
+	}
+
 	[Theory]
 	[MemberData(nameof(BasicScripts))]
 	public void Given_basic_fixture_When_compiling_Then_bytecode_matches_baseline(string scriptPath)
@@ -33,6 +40,16 @@ public class BaselineTests
 		Assert.Equal(baseline.CompilationSuccess, result.Success);
 		Assert.Equal(baseline.BytecodeSize, result.ByteCode.Length);
 		Assert.Equal(baseline.BytecodeHash, hash);
+	}
+
+	[Theory]
+	[MemberData(nameof(AdvancedScripts))]
+	public void Given_advanced_fixture_When_compiling_Then_it_succeeds(string scriptPath)
+	{
+		var result = Interface.CompileCode(File.ReadAllText(scriptPath), withHeader: false);
+
+		Assert.True(result.Success, result.ErrMsg);
+		Assert.NotEmpty(result.ByteCode);
 	}
 
 	[Theory]
