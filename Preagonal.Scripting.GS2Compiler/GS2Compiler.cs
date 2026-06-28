@@ -1253,6 +1253,7 @@ internal static class GS2Compiler
 			if (_pos >= _code.Length) return Make(TokenType.End, "");
 			var ch = _code[_pos];
 			if (ch == '0' && (Peek(1) == 'x' || Peek(1) == 'X')) return HexNumber();
+			if (ch == '.' && char.IsDigit(Peek(1))) return Number();
 			if (char.IsDigit(ch)) return Number();
 			if (IsIdentStart(ch)) return Identifier();
 			if (ch == '"') return String();
