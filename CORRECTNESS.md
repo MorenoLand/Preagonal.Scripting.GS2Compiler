@@ -10,3 +10,6 @@
 - Native AOT win-x64 publish: verified.
 - Native AOT win-x64 export names present in published DLL: `get_context`, `compile_code`, `compile_code_no_header`, `delete_context`.
 - Native AOT linux-x64 publish from Windows: blocked by .NET cross-OS native compilation limits.
+- Browser WASM publish: verified with `wasm-tools`, `wasm-tools-net8`, and `wasm-tools-net9` workloads installed.
+- WASI publish: verified with `wasi-experimental` and repo-local `wasi-sdk-25.0-x86_64-windows`.
+- WASI runtime smoke: Wasmtime `v46.0.1` starts the component but traps inside Mono before reaching CLI `Main`.
