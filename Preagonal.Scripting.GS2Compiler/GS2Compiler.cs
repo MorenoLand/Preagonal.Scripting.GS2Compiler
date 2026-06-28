@@ -79,11 +79,11 @@ internal static class GS2Compiler
 
 		private FunctionNode ParseFunction(bool isPublic, string? objectName)
 		{
-			var name = Expect(TokenType.Identifier).Text;
+			var name = ParseQualifiedIdentifierName();
 			if (Match(TokenType.Dot))
 			{
 				objectName = name;
-				name = Expect(TokenType.Identifier).Text;
+				name = ParseQualifiedIdentifierName();
 			}
 			Expect(TokenType.LeftParen);
 			List<Expr> args = [];
