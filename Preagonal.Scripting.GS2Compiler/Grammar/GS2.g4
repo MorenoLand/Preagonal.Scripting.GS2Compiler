@@ -23,7 +23,7 @@ breakStatement: BREAK SEMI?;
 continueStatement: CONTINUE SEMI?;
 expressionStatement: expression SEMI?;
 expression: expression QUESTION expression COLON expression
-	| expression op=(MUL | DIV | MOD) expression
+	| expression op=(MUL | DIV | MOD | POW) expression
 	| expression op=(PLUS | MINUS) expression
 	| expression op=(SHL | SHR) expression
 	| expression op=(LT | LTE | LTE_ALT | GT | GTE | GTE_ALT) expression
@@ -105,6 +105,7 @@ MINUS: '-';
 MUL: '*';
 DIV: '/';
 MOD: '%';
+POW: '^';
 CONCAT: '@';
 NOT: '!';
 BIT_INVERT: '~';
