@@ -110,7 +110,7 @@ NOT: '!';
 BIT_INVERT: '~';
 BAND: '&';
 BOR: '|';
-BXOR: '^' | 'xor';
+BXOR: 'xor';
 QUESTION: '?';
 COLON: ':';
 SEMI: ';';

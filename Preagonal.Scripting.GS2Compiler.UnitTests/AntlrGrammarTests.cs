@@ -23,7 +23,7 @@ public class AntlrGrammarTests
 	[Fact]
 	public void Given_cast_script_When_parsed_with_generated_antlr_parser_Then_no_syntax_errors()
 	{
-		AssertParses("function onCreated() { temp.i = int(\"3.8\"); temp.f = float(\"2.5\"); temp.t = _(\"Hello\"); temp.mask = ~temp.flags; temp.flags <<= 2; temp.flags >>= 1; temp.value ^= 3; }");
+		AssertParses("function onCreated() { temp.i = int(\"3.8\"); temp.f = float(\"2.5\"); temp.t = _(\"Hello\"); temp.mask = ~temp.flags; temp.flags <<= 2; temp.flags >>= 1; temp.value ^= 3; temp.mask = temp.flags xor 3; }");
 	}
 
 	private static void AssertParses(string code)

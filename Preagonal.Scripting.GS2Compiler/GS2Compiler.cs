@@ -286,7 +286,7 @@ internal static class GS2Compiler
 		private Expr ParseBitwise()
 		{
 			var expr = ParseEquality();
-			while (_current.Type is TokenType.BitAnd or TokenType.BitOr or TokenType.ShiftLeft or TokenType.ShiftRight)
+			while (_current.Type is TokenType.BitAnd or TokenType.BitOr or TokenType.BitXor or TokenType.ShiftLeft or TokenType.ShiftRight)
 			{
 				var op = _current.Text;
 				Advance();
@@ -1197,6 +1197,7 @@ internal static class GS2Compiler
 			">=" or "=>" => Op.Gte,
 			"&" => Op.BitAnd,
 			"|" => Op.BitOr,
+			"xor" => Op.BitXor,
 			"<<" => Op.ShiftLeft,
 			">>" => Op.ShiftRight,
 			"&&" => Op.And,
@@ -1489,6 +1490,7 @@ internal static class GS2Compiler
 				"int" => TokenType.IntCast,
 				"float" => TokenType.FloatCast,
 				"_" => TokenType.Translate,
+				"xor" => TokenType.BitXor,
 				"true" => TokenType.True,
 				"false" => TokenType.False,
 				"null" => TokenType.Null,
@@ -1527,7 +1529,7 @@ internal static class GS2Compiler
 		private static bool IsIdentPart(char c) => char.IsLetterOrDigit(c) || c is '_' or '$';
 	}
 
-	private enum TokenType { Unknown, End, Identifier, Number, String, Const, Enum, Function, Public, Return, If, Else, ElseIf, For, While, With, New, In, Switch, Case, Default, Break, Continue, IntCast, FloatCast, Translate, True, False, Null, Assign, AddAssign, SubAssign, MulAssign, DivAssign, PowAssign, ModAssign, CatAssign, ShiftLeftAssign, ShiftRightAssign, Semicolon, Comma, Colon, Question, Dot, Scope, LeftBrace, RightBrace, LeftParen, RightParen, LeftBracket, RightBracket, Minus, Plus, Star, Slash, Percent, Caret, At, Not, BitInvert, Equal, NotEqual, Less, LessEqual, Greater, GreaterEqual, And, Or, BitAnd, BitOr, ShiftLeft, ShiftRight, Increment, Decrement }
+	private enum TokenType { Unknown, End, Identifier, Number, String, Const, Enum, Function, Public, Return, If, Else, ElseIf, For, While, With, New, In, Switch, Case, Default, Break, Continue, IntCast, FloatCast, Translate, True, False, Null, Assign, AddAssign, SubAssign, MulAssign, DivAssign, PowAssign, ModAssign, CatAssign, ShiftLeftAssign, ShiftRightAssign, Semicolon, Comma, Colon, Question, Dot, Scope, LeftBrace, RightBrace, LeftParen, RightParen, LeftBracket, RightBracket, Minus, Plus, Star, Slash, Percent, Caret, At, Not, BitInvert, Equal, NotEqual, Less, LessEqual, Greater, GreaterEqual, And, Or, BitAnd, BitOr, BitXor, ShiftLeft, ShiftRight, Increment, Decrement }
 	private sealed record Token(TokenType Type, string Text, int Line, int Column) { public string LineText { get; init; } = ""; }
 	private sealed record ProgramNode(Dictionary<string, Expr> Constants, Dictionary<string, Dictionary<string, int>> Enums, List<FunctionNode> Functions, List<Stmt> TopLevelStatements);
 	private sealed record FunctionNode(string Name, string? ObjectName, bool Public, List<Expr> Args, List<Stmt> Body);
@@ -1620,6 +1622,7 @@ internal static class GS2Compiler
 		Gte = 75,
 		BitOr = 76,
 		BitAnd = 77,
+		BitXor = 78,
 		BitInvert = 79,
 		InRange = 80,
 		InObj = 81,

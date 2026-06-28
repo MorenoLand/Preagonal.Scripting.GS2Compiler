@@ -141,4 +141,20 @@ public class InterfaceTests
 		Assert.True(result.Success);
 		Assert.NotEmpty(result.ByteCode);
 	}
+
+	[Fact]
+	public void Given_script_with_bitwise_xor_When_compiling_Then_success_is_true_and_bytecode_is_not_empty()
+	{
+		const string scriptText =
+			"""
+						function onCreated() {
+						  temp.mask = temp.flags xor 3;
+						}
+			""";
+
+		var result = Interface.CompileCode(scriptText);
+
+		Assert.True(result.Success);
+		Assert.NotEmpty(result.ByteCode);
+	}
 }
