@@ -351,6 +351,16 @@ internal static class GS2Compiler
 			if (Match(TokenType.True)) return new BoolExpr(true);
 			if (Match(TokenType.False)) return new BoolExpr(false);
 			if (Match(TokenType.Null)) return new NullExpr();
+			if (Match(TokenType.New))
+			{
+				var typeName = Expect(TokenType.Identifier).Text;
+				Expect(TokenType.LeftParen);
+				List<Expr> args = [];
+				if (_current.Type != TokenType.RightParen)
+					do args.Add(ParseExpression()); while (Match(TokenType.Comma));
+				Expect(TokenType.RightParen);
+				return new NewObjectExpr(typeName, args);
+			}
 			if (Match(TokenType.Function))
 			{
 				Expect(TokenType.LeftParen);
@@ -470,7 +480,7 @@ internal static class GS2Compiler
 			if (statement is ExprStmt exprStatement)
 			{
 				Emit(exprStatement.Expression);
-				if (exprStatement.Expression is CallExpr) _bytecode.Emit(Op.IndexDec);
+				if (exprStatement.Expression is CallExpr or MethodCallExpr) _bytecode.Emit(Op.IndexDec);
 			}
 			else if (statement is ReturnStmt returnStatement)
 			{
@@ -658,7 +668,7 @@ internal static class GS2Compiler
 					break;
 				case MemberExpr member:
 					Emit(member.Object);
-					if (member.Object is IdentifierExpr memberId && memberId.Name != "temp") _bytecode.Emit(Op.ConvToObject);
+					if (member.Object is not IdentifierExpr { Name: "temp" } and not ArrayIndexExpr) _bytecode.Emit(Op.ConvToObject);
 					_bytecode.Emit(Op.TypeVar);
 					_bytecode.EmitDynamicStringIndex(_bytecode.GetString(member.Name));
 					_bytecode.Emit(Op.MemberAccess);
@@ -731,10 +741,27 @@ internal static class GS2Compiler
 					_bytecode.Emit(Op.TypeArray);
 					for (var i = call.Args.Count - 1; i >= 0; --i) Emit(call.Args[i]);
 					Emit(call.Object);
+					if (call.Object is not IdentifierExpr { Name: "temp" }) _bytecode.Emit(Op.ConvToObject);
 					_bytecode.Emit(Op.TypeVar);
 					_bytecode.EmitDynamicStringIndex(_bytecode.GetString(call.Name));
 					_bytecode.Emit(Op.MemberAccess);
 					_bytecode.Emit(Op.Call);
+					break;
+				case NewObjectExpr obj:
+					var typeNameIndex = _bytecode.GetString(obj.TypeName);
+					if (obj.Args.Count == 1)
+					{
+						Emit(obj.Args[0]);
+						_bytecode.Emit(Op.InlineNew);
+					}
+					else
+					{
+						_bytecode.Emit(Op.TypeVar);
+						_bytecode.EmitDynamicStringIndex(_bytecode.GetString("unknown_object"));
+					}
+					_bytecode.Emit(Op.TypeString);
+					_bytecode.EmitDynamicStringIndex(typeNameIndex);
+					_bytecode.Emit(Op.NewObject);
 					break;
 				case LambdaExpr lambda:
 					EmitFunction(new(lambda.Name, null, true, lambda.Args, lambda.Body), false);
@@ -1070,6 +1097,7 @@ internal static class GS2Compiler
 				"else" => TokenType.Else,
 				"for" => TokenType.For,
 				"with" => TokenType.With,
+				"new" => TokenType.New,
 				"switch" => TokenType.Switch,
 				"case" => TokenType.Case,
 				"default" => TokenType.Default,
@@ -1111,7 +1139,7 @@ internal static class GS2Compiler
 		private static bool IsIdentPart(char c) => char.IsLetterOrDigit(c) || c is '_' or '$';
 	}
 
-	private enum TokenType { Unknown, End, Identifier, Number, String, Const, Enum, Function, Return, If, Else, For, With, Switch, Case, Default, Break, True, False, Null, Assign, AddAssign, SubAssign, MulAssign, DivAssign, ModAssign, CatAssign, Semicolon, Comma, Colon, Question, Dot, Scope, LeftBrace, RightBrace, LeftParen, RightParen, LeftBracket, RightBracket, Minus, Plus, Star, Slash, Percent, Caret, At, Not, Equal, NotEqual, Less, LessEqual, Greater, GreaterEqual, And, Or, BitAnd, BitOr, ShiftLeft, ShiftRight, Increment, Decrement }
+	private enum TokenType { Unknown, End, Identifier, Number, String, Const, Enum, Function, Return, If, Else, For, With, New, Switch, Case, Default, Break, True, False, Null, Assign, AddAssign, SubAssign, MulAssign, DivAssign, ModAssign, CatAssign, Semicolon, Comma, Colon, Question, Dot, Scope, LeftBrace, RightBrace, LeftParen, RightParen, LeftBracket, RightBracket, Minus, Plus, Star, Slash, Percent, Caret, At, Not, Equal, NotEqual, Less, LessEqual, Greater, GreaterEqual, And, Or, BitAnd, BitOr, ShiftLeft, ShiftRight, Increment, Decrement }
 	private sealed record Token(TokenType Type, string Text, int Line, int Column) { public string LineText { get; init; } = ""; }
 	private sealed record ProgramNode(Dictionary<string, Expr> Constants, Dictionary<string, Dictionary<string, int>> Enums, List<FunctionNode> Functions);
 	private sealed record FunctionNode(string Name, string? ObjectName, bool Public, List<string> Args, List<Stmt> Body);
@@ -1139,6 +1167,7 @@ internal static class GS2Compiler
 	private sealed record NullExpr : Expr;
 	private sealed record CallExpr(string Name, List<Expr> Args) : Expr;
 	private sealed record MethodCallExpr(Expr Object, string Name, List<Expr> Args) : Expr;
+	private sealed record NewObjectExpr(string TypeName, List<Expr> Args) : Expr;
 	private sealed record LambdaExpr(string Name, List<string> Args, List<Stmt> Body) : Expr;
 	private sealed record ArrayLiteralExpr(List<Expr> Values) : Expr;
 	private sealed record FunctionEntry(string Name, int OpIndex, int JmpLoc);
@@ -1167,6 +1196,8 @@ internal static class GS2Compiler
 		MemberAccess = 35,
 		ConvToObject = 36,
 		ArrayEnd = 37,
+		InlineNew = 40,
+		NewObject = 42,
 		Assign = 50,
 		FuncParamsEnd = 51,
 		Inc = 52,
