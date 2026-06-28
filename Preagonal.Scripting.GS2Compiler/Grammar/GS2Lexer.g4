@@ -15,6 +15,8 @@ DIV_ASSIGN: '/=';
 POW_ASSIGN: '^=';
 MOD_ASSIGN: '%=';
 CONCAT_ASSIGN: '@=';
+BWOR_ASSIGN: '|=';
+BWAND_ASSIGN: '&=';
 SHL_ASSIGN: '<<=';
 SHR_ASSIGN: '>>=';
 INC: '++';
