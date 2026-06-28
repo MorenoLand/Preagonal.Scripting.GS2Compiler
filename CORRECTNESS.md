@@ -2,10 +2,10 @@
 
 ## 2026-06-28
 
-- Test suite: 182/182 xUnit tests passing.
-- Fixture bytecode parity: 27 tests passing.
+- Test suite: 184/184 xUnit tests passing.
+- Fixture bytecode parity: 29 tests passing.
 - Advanced corpus compile coverage: 155/155 scripts compile through xUnit.
-- Advanced bytecode parity: 27/155 SHA-256 matches and 28/155 byte-size matches against copied C++ advanced baselines.
+- Advanced bytecode parity: 36/155 SHA-256 matches and 37/155 byte-size matches against copied C++ advanced baselines.
 - Published CLI win-x64 exe: verified against `statements/03_switch.gs2`, byte length 425, baseline SHA-256 match.
 - Native AOT win-x64 publish: verified.
 - Native AOT win-x64 export names present in published DLL: `get_context`, `compile_code`, `compile_code_no_header`, `delete_context`.
