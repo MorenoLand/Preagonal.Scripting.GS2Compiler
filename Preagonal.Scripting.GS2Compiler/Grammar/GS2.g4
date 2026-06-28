@@ -7,7 +7,7 @@ declaration: constDeclaration | enumDeclaration | functionDeclaration | statemen
 constDeclaration: CONST IDENTIFIER ASSIGN expression SEMI?;
 enumDeclaration: ENUM IDENTIFIER LBRACE enumMember (COMMA enumMember)* COMMA? RBRACE SEMI?;
 enumMember: IDENTIFIER (ASSIGN expression)?;
-functionDeclaration: PUBLIC? FUNCTION qualifiedName LPAREN parameterList? RPAREN block;
+functionDeclaration: PUBLIC? FUNCTION qualifiedName LPAREN parameterList? RPAREN statement?;
 parameterList: IDENTIFIER (COMMA IDENTIFIER)* COMMA?;
 block: LBRACE statement* RBRACE;
 statement: block | ifStatement | forStatement | whileStatement | switchStatement | withStatement | newStatement | returnStatement | breakStatement | continueStatement | expressionStatement | SEMI;
