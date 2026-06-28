@@ -119,6 +119,7 @@ internal static class GS2Compiler
 		private Stmt ParseStatement()
 		{
 			if (_current.Type == TokenType.LeftBrace) return new BlockStmt(ParseBlock());
+			if (Match(TokenType.New)) return ParseNewStatement();
 			if (Match(TokenType.Return))
 			{
 				var expr = _current.Type == TokenType.Semicolon ? new NumberExpr("0") : ParseExpression();
@@ -153,6 +154,17 @@ internal static class GS2Compiler
 			Expect(TokenType.Semicolon);
 			if (before == _current) Advance();
 			return exprStatement;
+		}
+
+		private Stmt ParseNewStatement()
+		{
+			var typeName = Expect(TokenType.Identifier).Text;
+			Expect(TokenType.LeftParen);
+			List<Expr> args = [];
+			if (_current.Type != TokenType.RightParen)
+				do args.Add(ParseExpression()); while (Match(TokenType.Comma));
+			Expect(TokenType.RightParen);
+			return new NewStmt(typeName, args, _current.Type == TokenType.LeftBrace ? ParseBlock() : []);
 		}
 
 		private Stmt ParseElseIfStatement()
@@ -490,6 +502,7 @@ internal static class GS2Compiler
 		private readonly Dictionary<string, Expr> _constants;
 		private readonly Dictionary<string, Dictionary<string, int>> _enums;
 		private readonly Stack<List<int>> _breakPatches = new();
+		private int _newObjectCount;
 
 		public Emitter(BytecodeWriter bytecode, Dictionary<string, Expr> constants, Dictionary<string, Dictionary<string, int>> enums)
 		{
@@ -543,6 +556,7 @@ internal static class GS2Compiler
 			else if (statement is SwitchStmt switchStatement) EmitSwitch(switchStatement);
 			else if (statement is BreakStmt) EmitBreak();
 			else if (statement is BlockStmt blockStatement) foreach (var stmt in blockStatement.Body) EmitStatement(stmt);
+			else if (statement is NewStmt newStatement) EmitNewStatement(newStatement);
 		}
 
 		private void EmitIf(IfStmt statement)
@@ -647,6 +661,37 @@ internal static class GS2Compiler
 			if (_breakPatches.Count == 0) return;
 			_bytecode.Emit(Op.SetIndex);
 			_breakPatches.Peek().Add(_bytecode.EmitNumberOperandPlaceholder());
+		}
+
+		private void EmitNewStatement(NewStmt statement)
+		{
+			foreach (var arg in statement.Args) Emit(arg);
+			_bytecode.Emit(Op.InlineNew);
+			_bytecode.Emit(Op.CopyLastOp);
+			_bytecode.Emit(Op.CopyLastOp);
+			_bytecode.Emit(Op.CopyLastOp);
+			_bytecode.Emit(Op.TypeString);
+			_bytecode.EmitDynamicStringIndex(_bytecode.GetString(statement.TypeName));
+			_bytecode.Emit(Op.ConvToString);
+			_bytecode.Emit(Op.NewObject);
+			_bytecode.Emit(Op.Assign);
+			_bytecode.Emit(Op.ConvToObject);
+			_bytecode.Emit(Op.With);
+			var withLoc = _bytecode.EmitNumberOperandPlaceholder();
+			var previousCount = _newObjectCount++;
+			foreach (var stmt in statement.Body) EmitStatement(stmt);
+			_bytecode.Emit(Op.WithEnd);
+			_bytecode.PatchShort(withLoc, _bytecode.OpIndex);
+			for (var i = 0; i < _newObjectCount - previousCount; ++i)
+			{
+				_bytecode.Emit(Op.TypeArray);
+				_bytecode.Emit(Op.SwapLastOps);
+				_bytecode.Emit(Op.TypeVar);
+				_bytecode.EmitDynamicStringIndex(_bytecode.GetString("addcontrol"));
+				_bytecode.Emit(Op.Call);
+				_bytecode.Emit(Op.IndexDec);
+			}
+			_newObjectCount--;
 		}
 
 		private void Emit(Expr expr, bool copyAssignmentTarget, bool logicalInline, int suppressedLogicalPatchOffset)
@@ -1257,6 +1302,7 @@ internal static class GS2Compiler
 	private sealed record ForEachStmt(Expr Name, Expr Source, List<Stmt> Body) : Stmt;
 	private sealed record WithStmt(Expr Target, List<Stmt> Body) : Stmt;
 	private sealed record SwitchStmt(Expr Expression, List<SwitchCase> Cases) : Stmt;
+	private sealed record NewStmt(string TypeName, List<Expr> Args, List<Stmt> Body) : Stmt;
 	private sealed record BreakStmt : Stmt;
 	private sealed record SwitchCase(List<Expr?> Labels, List<Stmt> Body);
 	private abstract record Expr;
@@ -1298,6 +1344,7 @@ internal static class GS2Compiler
 		TypeTrue = 24,
 		TypeFalse = 25,
 		TypeNull = 26,
+		SwapLastOps = 31,
 		IndexDec = 32,
 		ConvToFloat = 33,
 		ConvToString = 34,
