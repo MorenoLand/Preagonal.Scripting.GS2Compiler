@@ -50,4 +50,4 @@ arrayRank: LBRACK NUMBER RBRACK;
 rangeExpression: BOR expression (COMMA expression)? BOR | expression;
 argumentList: expression (COMMA expression)* COMMA?;
 numberList: NUMBER (COMMA NUMBER)* COMMA?;
-qualifiedName: IDENTIFIER (DOUBLE_COLON IDENTIFIER | DOT IDENTIFIER)*;
+qualifiedName: IDENTIFIER (DOT IDENTIFIER)*;

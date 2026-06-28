@@ -29,12 +29,13 @@ public class AntlrGrammarTests
 	[Fact]
 	public void Given_token_quirks_When_lexed_Then_expected_tokens_are_emitted()
 	{
-		var input = CharStreams.fromString(":= =< => <> xor SPC NL TAB <<= >>= << >> @= |= &=");
+		var input = CharStreams.fromString(":= =< => <> xor SPC NL TAB <<= >>= << >> @= |= &= Gui::Control");
 		var lexer = new GS2Lexer(input);
 		var visibleTokens = lexer.GetAllTokens().Where(token => token.Channel == Lexer.DefaultTokenChannel).ToArray();
 		var tokens = visibleTokens.Select(token => token.Type).ToArray();
-		Assert.Equal([GS2Lexer.WALRUS, GS2Lexer.LTE_ALT, GS2Lexer.GTE_ALT, GS2Lexer.NEQ_ALT, GS2Lexer.BXOR, GS2Lexer.CONCAT, GS2Lexer.CONCAT, GS2Lexer.CONCAT, GS2Lexer.SHL_ASSIGN, GS2Lexer.SHR_ASSIGN, GS2Lexer.SHL, GS2Lexer.SHR, GS2Lexer.CONCAT_ASSIGN, GS2Lexer.BWOR_ASSIGN, GS2Lexer.BWAND_ASSIGN], tokens);
+		Assert.Equal([GS2Lexer.WALRUS, GS2Lexer.LTE_ALT, GS2Lexer.GTE_ALT, GS2Lexer.NEQ_ALT, GS2Lexer.BXOR, GS2Lexer.CONCAT, GS2Lexer.CONCAT, GS2Lexer.CONCAT, GS2Lexer.SHL_ASSIGN, GS2Lexer.SHR_ASSIGN, GS2Lexer.SHL, GS2Lexer.SHR, GS2Lexer.CONCAT_ASSIGN, GS2Lexer.BWOR_ASSIGN, GS2Lexer.BWAND_ASSIGN, GS2Lexer.IDENTIFIER], tokens);
 		Assert.Equal([" ", "\n", "\t"], visibleTokens.Skip(5).Take(3).Select(token => token.Text).ToArray());
+		Assert.Equal("Gui::Control", visibleTokens[^1].Text);
 	}
 
 	private static void AssertParses(string code)
