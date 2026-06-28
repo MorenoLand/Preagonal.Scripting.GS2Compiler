@@ -44,7 +44,7 @@ postfixPart: LPAREN argumentList? RPAREN | DOT IDENTIFIER | DOT LPAREN expressio
 primaryExpression: NUMBER | STRING | CHAR | TRUE | FALSE | NULL | castExpression | qualifiedName | arrayLiteral | lambdaExpression | newExpression | LPAREN expression RPAREN;
 castExpression: INT_CAST LPAREN expression RPAREN | FLOAT_CAST LPAREN expression RPAREN | TRANSLATE LPAREN expression RPAREN;
 arrayLiteral: LBRACE argumentList? RBRACE;
-lambdaExpression: FUNCTION LPAREN argumentList? RPAREN block;
+lambdaExpression: FUNCTION LPAREN argumentList? RPAREN statement;
 newExpression: NEW qualifiedName LPAREN argumentList? RPAREN | NEW LBRACK numberList RBRACK;
 rangeExpression: BOR expression (COMMA expression)? BOR | expression;
 argumentList: expression (COMMA expression)* COMMA?;

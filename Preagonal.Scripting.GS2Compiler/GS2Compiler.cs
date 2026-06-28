@@ -470,7 +470,7 @@ internal static class GS2Compiler
 					do args.Add(ParseExpression()); while (Match(TokenType.Comma));
 				}
 				Expect(TokenType.RightParen);
-				return new LambdaExpr($"function_{_lambdaId++}_1", args, ParseBlock());
+				return new LambdaExpr($"function_{_lambdaId++}_1", args, _current.Type == TokenType.LeftBrace ? ParseBlock() : [ParseStatement()]);
 			}
 			if (Match(TokenType.LeftBrace))
 			{

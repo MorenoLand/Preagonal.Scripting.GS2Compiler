@@ -176,4 +176,20 @@ public class InterfaceTests
 		Assert.True(result.Success);
 		Assert.NotEmpty(result.ByteCode);
 	}
+
+	[Fact]
+	public void Given_lambda_with_single_statement_body_When_compiling_Then_success_is_true_and_bytecode_is_not_empty()
+	{
+		const string scriptText =
+			"""
+						function onCreated() {
+						  temp.fn = function() temp.value = 1;;
+						}
+			""";
+
+		var result = Interface.CompileCode(scriptText);
+
+		Assert.True(result.Success);
+		Assert.NotEmpty(result.ByteCode);
+	}
 }
