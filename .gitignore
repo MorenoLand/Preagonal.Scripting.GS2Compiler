@@ -1,0 +1,9 @@
+bin/
+obj/
+TestResults/
+tests/reports/
+tests/outputs/
+*.user
+*.suo
+*.rsuser
+*.gs2bc
