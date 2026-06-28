@@ -1,76 +1,106 @@
 grammar GS2;
 
-program: declaration* EOF;
-declaration: constDecl | enumDecl | functionDecl | statement;
-constDecl: CONST IDENTIFIER ASSIGN expression SEMI;
-enumDecl: ENUM IDENTIFIER? LBRACE enumItem (COMMA enumItem)* COMMA? RBRACE SEMI?;
-enumItem: IDENTIFIER (ASSIGN MINUS? INT)?;
-functionDecl: PUBLIC? FUNCTION IDENTIFIER (DOT IDENTIFIER)? LPAREN argumentList? RPAREN statement;
-argumentList: IDENTIFIER (COMMA IDENTIFIER)*;
-statement: block | expression SEMI | SEMI;
-block: LBRACE statement* RBRACE;
-expression: assignment;
-assignment: ternary (assignmentOperator assignment)?;
-assignmentOperator: ASSIGN | ADD_ASSIGN | SUB_ASSIGN | MUL_ASSIGN | DIV_ASSIGN | POW_ASSIGN | MOD_ASSIGN | CAT_ASSIGN | BW_LSHIFT_ASSIGN | BW_RSHIFT_ASSIGN;
-ternary: logicalOr (QUESTION expression COLON expression)?;
-logicalOr: logicalAnd (OR logicalAnd)*;
-logicalAnd: bitwise (AND bitwise)*;
-bitwise: equality ((BIT_AND | BIT_OR | BW_XOR | BW_LSHIFT | BW_RSHIFT) equality)*;
-equality: comparison ((EQ | NEQ | IN) comparison)*;
-comparison: additive ((LT | LTE | GT | GTE) additive)*;
-additive: multiplicative ((PLUS | MINUS | AT) multiplicative)*;
-multiplicative: unary ((MUL | DIV | POW | MOD) unary)*;
-unary: (MINUS | AT | NOT | BW_INVERT | DEC | INC) unary | postfix (INC | DEC)?;
-postfix: primary ((LBRACKET argumentList? RBRACKET) | (LPAREN expressionList? RPAREN) | (DOT primary))*;
-primary: literal | IDENTIFIER (SCOPE IDENTIFIER)? | LPAREN expression RPAREN | NEW IDENTIFIER LPAREN expressionList? RPAREN | NEW arrayRank+ | LBRACE expressionList? COMMA? RBRACE;
-arrayRank: LBRACKET INT RBRACKET;
-expressionList: expression (COMMA expression)*;
-literal: INT | FLOAT | STRING | TRUE | FALSE | NULL;
+options { language=CSharp; }
 
+script: declaration* EOF;
+declaration: constDeclaration | enumDeclaration | functionDeclaration | statement;
+constDeclaration: CONST IDENTIFIER ASSIGN expression SEMI?;
+enumDeclaration: ENUM IDENTIFIER LBRACE enumMember (COMMA enumMember)* COMMA? RBRACE SEMI?;
+enumMember: IDENTIFIER (ASSIGN expression)?;
+functionDeclaration: PUBLIC? FUNCTION qualifiedName LPAREN parameterList? RPAREN block;
+parameterList: IDENTIFIER (COMMA IDENTIFIER)* COMMA?;
+block: LBRACE statement* RBRACE;
+statement: block | ifStatement | forStatement | whileStatement | switchStatement | withStatement | newStatement | returnStatement | breakStatement | expressionStatement | SEMI;
+ifStatement: IF LPAREN expression RPAREN statement (ELSE statement)?;
+forStatement: FOR LPAREN expression? SEMI expression? SEMI expression? RPAREN statement | FOR LPAREN IDENTIFIER COLON expression RPAREN statement;
+whileStatement: WHILE LPAREN expression RPAREN statement;
+switchStatement: SWITCH LPAREN expression RPAREN LBRACE switchCase* RBRACE;
+switchCase: (CASE expression | DEFAULT) COLON statement*;
+withStatement: WITH LPAREN expression RPAREN statement;
+newStatement: NEW qualifiedName LPAREN argumentList? RPAREN block?;
+returnStatement: RETURN expression? SEMI?;
+breakStatement: BREAK SEMI?;
+expressionStatement: expression SEMI?;
+expression: expression QUESTION expression COLON expression
+	| expression op=(MUL | DIV | MOD) expression
+	| expression op=(PLUS | MINUS) expression
+	| expression op=(SHL | SHR) expression
+	| expression op=(LT | LTE | LTE_ALT | GT | GTE | GTE_ALT) expression
+	| expression op=(EQ | NEQ | NEQ_ALT) expression
+	| expression BAND expression
+	| expression BXOR expression
+	| expression BOR expression
+	| expression IN rangeExpression
+	| expression AND expression
+	| expression OR expression
+	| expression op=(ASSIGN | WALRUS | PLUS_ASSIGN | MINUS_ASSIGN | MUL_ASSIGN | DIV_ASSIGN | MOD_ASSIGN | CONCAT_ASSIGN) expression
+	| expression op=(CONCAT | SPC | NL | TAB) expression
+	| prefixExpression;
+prefixExpression: op=(INC | DEC | NOT | MINUS | CONCAT) prefixExpression | postfixExpression;
+postfixExpression: primaryExpression postfixPart*;
+postfixPart: LPAREN argumentList? RPAREN | DOT IDENTIFIER | DOT LPAREN expression RPAREN | LBRACK argumentList? RBRACK | op=(INC | DEC);
+primaryExpression: NUMBER | STRING | CHAR | TRUE | FALSE | NULL | qualifiedName | arrayLiteral | lambdaExpression | newExpression | LPAREN expression RPAREN;
+arrayLiteral: LBRACE argumentList? RBRACE;
+lambdaExpression: FUNCTION LPAREN argumentList? RPAREN block;
+newExpression: NEW qualifiedName LPAREN argumentList? RPAREN | NEW LBRACK numberList RBRACK;
+rangeExpression: BOR expression (COMMA expression)? BOR | expression;
+argumentList: expression (COMMA expression)* COMMA?;
+numberList: NUMBER (COMMA NUMBER)* COMMA?;
+qualifiedName: IDENTIFIER (DOUBLE_COLON IDENTIFIER | DOT IDENTIFIER)*;
+
+CONST: 'const';
+ENUM: 'enum';
 PUBLIC: 'public';
+FUNCTION: 'function';
 IF: 'if';
 ELSE: 'else';
-ELSEIF: 'elseif';
 FOR: 'for';
 WHILE: 'while';
-BREAK: 'break';
-CONTINUE: 'continue';
-RETURN: 'return';
-FUNCTION: 'function';
-NEW: 'new';
-WITH: 'with';
 SWITCH: 'switch';
 CASE: 'case';
 DEFAULT: 'default';
-CONST: 'const';
-ENUM: 'enum';
+WITH: 'with';
+NEW: 'new';
+RETURN: 'return';
+BREAK: 'break';
+IN: 'in';
 TRUE: 'true';
 FALSE: 'false';
 NULL: 'null';
-IN: 'in';
-ASSIGN: '=' | ':=';
-ADD_ASSIGN: '+=';
-SUB_ASSIGN: '-=';
+WALRUS: ':=';
+LTE_ALT: '=<';
+GTE_ALT: '=>';
+NEQ_ALT: '<>';
+DOUBLE_COLON: '::';
+PLUS_ASSIGN: '+=';
+MINUS_ASSIGN: '-=';
 MUL_ASSIGN: '*=';
 DIV_ASSIGN: '/=';
-POW_ASSIGN: '^=';
 MOD_ASSIGN: '%=';
-CAT_ASSIGN: '@=';
-BW_LSHIFT_ASSIGN: '<<=';
-BW_RSHIFT_ASSIGN: '>>=';
+CONCAT_ASSIGN: '@=';
 INC: '++';
 DEC: '--';
-OR: '||';
+SHL: '<<';
+SHR: '>>';
 AND: '&&';
+OR: '||';
 EQ: '==';
-NEQ: '!=' | '<>';
-LTE: '<=' | '=<';
-GTE: '>=' | '=>';
-BW_LSHIFT: '<<';
-BW_RSHIFT: '>>';
-BW_XOR: 'xor';
-BW_INVERT: '~';
-SCOPE: '::';
+NEQ: '!=';
+LTE: '<=';
+GTE: '>=';
+ASSIGN: '=';
+LT: '<';
+GT: '>';
+PLUS: '+';
+MINUS: '-';
+MUL: '*';
+DIV: '/';
+MOD: '%';
+CONCAT: '@';
+NOT: '!';
+BAND: '&';
+BOR: '|';
+BXOR: '^' | 'xor';
 QUESTION: '?';
 COLON: ':';
 SEMI: ';';
@@ -80,26 +110,15 @@ LPAREN: '(';
 RPAREN: ')';
 LBRACE: '{';
 RBRACE: '}';
-LBRACKET: '[';
-RBRACKET: ']';
-AT: '@' | 'NL' | 'SPC' | 'TAB';
-NOT: '!';
-LT: '<';
-GT: '>';
-PLUS: '+';
-MINUS: '-';
-MUL: '*';
-DIV: '/';
-POW: '^';
-MOD: '%';
-BIT_AND: '&';
-BIT_OR: '|';
-FLOAT: DIGIT* '.' DIGIT+;
-INT: '0x' HEX+ | DIGIT+;
-STRING: '"' ('\\' . | ~["\\])* '"' | '\'' ('\\' . | ~['\\]) '\'';
-IDENTIFIER: [a-zA-Z_$] [a-zA-Z_0-9$]* ('::' [a-zA-Z_$] [a-zA-Z_0-9$]*)*;
-WS: [ \t\r\n]+ -> skip;
-LINE_COMMENT: '//' ~[\r\n]* -> skip;
-BLOCK_COMMENT: '/*' .*? '*/' -> skip;
-fragment DIGIT: [0-9];
-fragment HEX: [a-fA-F0-9];
+LBRACK: '[';
+RBRACK: ']';
+SPC: 'SPC';
+NL: 'NL';
+TAB: 'TAB';
+NUMBER: '0' [xX] [0-9a-fA-F]+ | [0-9]+ ('.' [0-9]*)? | '.' [0-9]+;
+STRING: '"' ('\\' . | ~["\\])* '"';
+CHAR: '\'' ('\\' . | ~['\\])* '\'';
+IDENTIFIER: [A-Za-z_$] [A-Za-z0-9_$]*;
+LINE_COMMENT: '//' ~[\r\n]* -> channel(HIDDEN);
+BLOCK_COMMENT: '/*' .*? ('*/' | EOF) -> channel(HIDDEN);
+WS: [ \t\r\n]+ -> channel(HIDDEN);
