@@ -13,6 +13,7 @@ public class BaselineTests
 		foreach (var script in Directory.EnumerateFiles(Path.Combine(root, "tests", "scripts", category), "*.gs2", SearchOption.TopDirectoryOnly))
 			yield return [script];
 		yield return [Path.Combine(root, "tests", "scripts", "statements", "01_conditionals.gs2")];
+		yield return [Path.Combine(root, "tests", "scripts", "statements", "02_loops.gs2")];
 	}
 
 	[Theory]
