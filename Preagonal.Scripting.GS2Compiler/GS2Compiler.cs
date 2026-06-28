@@ -864,6 +864,7 @@ internal static class GS2Compiler
 					break;
 				case BinaryExpr binary:
 					Emit(binary.Left);
+					if (binary.Op == "@" && binary.Left is ArrayIndexExpr or MultiArrayIndexExpr) _bytecode.Emit(Op.ConvToString);
 					if ((IsNumericOp(binary.Op) || IsComparisonOp(binary.Op)) && NeedsNumericConversion(binary.Left)) _bytecode.Emit(Op.ConvToFloat);
 					if (binary.Op == "%" && binary.Left is BinaryExpr { Op: "+=" or "-=" or "*=" or "/=" or "%=" }) _bytecode.Emit(Op.ConvToFloat);
 					if (binary.Op == "&" && binary.Left is not NumberExpr) _bytecode.Emit(Op.ConvToFloat);
