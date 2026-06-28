@@ -14,6 +14,7 @@ internal static class GS2Compiler
 		if (parser.ErrorMessage != null) return new() { Success = false, ErrMsg = parser.ErrorMessage, ByteCode = [] };
 		var bytecode = new BytecodeWriter();
 		var emitter = new Emitter(bytecode, program.Constants, program.Enums);
+		emitter.EmitTopLevel(program.TopLevelStatements);
 		foreach (var function in program.Functions) emitter.EmitFunction(function);
 		var result = bytecode.ToArray();
 		return new() { Success = true, ErrMsg = null, ByteCode = withHeader ? Header.Wrap(result, type, name) : result };
@@ -38,15 +39,16 @@ internal static class GS2Compiler
 		public ProgramNode Parse()
 		{
 			List<FunctionNode> functions = [];
+			List<Stmt> topLevelStatements = [];
 			while (_current.Type != TokenType.End)
 			{
 				if (Match(TokenType.Const)) ParseConst();
 				else if (Match(TokenType.Enum)) ParseEnum();
 				else if (Match(TokenType.Public)) { Expect(TokenType.Function); functions.Add(ParseFunction(true, null)); }
 				else if (Match(TokenType.Function)) functions.Add(ParseFunction(false, null));
-				else Advance();
+				else topLevelStatements.Add(ParseStatement());
 			}
-			return new(_constants, _enums, functions);
+			return new(_constants, _enums, functions, topLevelStatements);
 		}
 
 		private void ParseConst()
@@ -575,6 +577,11 @@ internal static class GS2Compiler
 			}
 			if (patchToFinal) _bytecode.AddPrejumpPatch(jmpLoc);
 			else _bytecode.PatchShort(jmpLoc, _bytecode.OpIndex);
+		}
+
+		public void EmitTopLevel(List<Stmt> statements)
+		{
+			foreach (var statement in statements) EmitStatement(statement);
 		}
 
 		private void Emit(Expr expr) => Emit(expr, false, true, 0);
@@ -1297,7 +1304,7 @@ internal static class GS2Compiler
 				if (c is ' ' or '\t' or '\r') { _pos++; continue; }
 				if (c == '\n') { _pos++; _line++; _lineStart = _pos; continue; }
 				if (c == '/' && Peek(1) == '/') { while (_pos < _code.Length && _code[_pos] != '\n') _pos++; continue; }
-				if (c == '/' && Peek(1) == '*') { _pos += 2; while (_pos + 1 < _code.Length && !(_code[_pos] == '*' && _code[_pos + 1] == '/')) { if (_code[_pos++] == '\n') { _line++; _lineStart = _pos; } } _pos += _pos + 1 < _code.Length ? 2 : 0; continue; }
+				if (c == '/' && Peek(1) == '*') { _pos += 2; while (_pos + 1 < _code.Length && !(_code[_pos] == '*' && _code[_pos + 1] == '/')) { if (_code[_pos++] == '\n') { _line++; _lineStart = _pos; } } if (_pos + 1 < _code.Length) _pos += 2; else _pos = _code.Length; continue; }
 				break;
 			}
 			if (_pos >= _code.Length) return Make(TokenType.End, "");
@@ -1443,7 +1450,7 @@ internal static class GS2Compiler
 
 	private enum TokenType { Unknown, End, Identifier, Number, String, Const, Enum, Function, Public, Return, If, Else, ElseIf, For, While, With, New, In, Switch, Case, Default, Break, True, False, Null, Assign, AddAssign, SubAssign, MulAssign, DivAssign, ModAssign, CatAssign, Semicolon, Comma, Colon, Question, Dot, Scope, LeftBrace, RightBrace, LeftParen, RightParen, LeftBracket, RightBracket, Minus, Plus, Star, Slash, Percent, Caret, At, Not, Equal, NotEqual, Less, LessEqual, Greater, GreaterEqual, And, Or, BitAnd, BitOr, ShiftLeft, ShiftRight, Increment, Decrement }
 	private sealed record Token(TokenType Type, string Text, int Line, int Column) { public string LineText { get; init; } = ""; }
-	private sealed record ProgramNode(Dictionary<string, Expr> Constants, Dictionary<string, Dictionary<string, int>> Enums, List<FunctionNode> Functions);
+	private sealed record ProgramNode(Dictionary<string, Expr> Constants, Dictionary<string, Dictionary<string, int>> Enums, List<FunctionNode> Functions, List<Stmt> TopLevelStatements);
 	private sealed record FunctionNode(string Name, string? ObjectName, bool Public, List<Expr> Args, List<Stmt> Body);
 	private abstract record Stmt;
 	private sealed record ExprStmt(Expr Expression) : Stmt;
