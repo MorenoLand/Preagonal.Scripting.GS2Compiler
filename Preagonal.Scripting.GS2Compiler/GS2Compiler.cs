@@ -928,7 +928,7 @@ internal static class GS2Compiler
 					break;
 				case BinaryExpr binary:
 					Emit(binary.Left);
-					if (binary.Op == "@" && binary.Left is ArrayIndexExpr or MultiArrayIndexExpr) _bytecode.Emit(Op.ConvToString);
+					if (binary.Op == "@" && NeedsStringConversion(binary.Left)) _bytecode.Emit(Op.ConvToString);
 					if ((IsNumericOp(binary.Op) || IsComparisonOp(binary.Op)) && NeedsNumericConversion(binary.Left)) _bytecode.Emit(Op.ConvToFloat);
 					if (binary.Op == "%" && binary.Left is BinaryExpr { Op: "+=" or "-=" or "*=" or "/=" or "%=" }) _bytecode.Emit(Op.ConvToFloat);
 					if (binary.Op == "&" && binary.Left is not NumberExpr) _bytecode.Emit(Op.ConvToFloat);
@@ -1155,6 +1155,7 @@ internal static class GS2Compiler
 		private static bool IsComparisonOp(string op) => op is "<" or "<=" or "=<" or ">" or ">=" or "=>";
 
 		private static bool NeedsNumericConversion(Expr expr) => expr is IdentifierExpr or MemberExpr or DynamicMemberExpr or DynamicVarExpr or CallExpr or ArrayIndexExpr or MultiArrayIndexExpr;
+		private static bool NeedsStringConversion(Expr expr) => expr is not StringExpr and not BinaryExpr { Op: "@" or " " or "\n" or "\t" };
 
 		private static bool NeedsObjectConversion(Expr expr) => expr switch
 		{
