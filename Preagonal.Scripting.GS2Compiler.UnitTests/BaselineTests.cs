@@ -93,7 +93,7 @@ public class BaselineTests
 		Assert.Empty(result.ByteCode);
 	}
 
-	private static string FindRepoRoot()
+	public static string FindRepoRoot()
 	{
 		var dir = AppContext.BaseDirectory;
 		while (dir != null && !File.Exists(Path.Combine(dir, "Preagonal.Scripting.GS2Compiler.sln")))
