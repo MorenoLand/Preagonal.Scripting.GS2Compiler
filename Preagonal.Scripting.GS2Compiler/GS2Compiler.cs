@@ -487,7 +487,12 @@ internal static class GS2Compiler
 			if (Match(TokenType.Identifier))
 			{
 				var first = _previous.Text;
-				if (Match(TokenType.Scope)) return new EnumExpr(first, Expect(TokenType.Identifier).Text);
+				if (Match(TokenType.Scope))
+				{
+					List<string> parts = [first, Expect(TokenType.Identifier).Text];
+					while (Match(TokenType.Scope)) parts.Add(Expect(TokenType.Identifier).Text);
+					return parts.Count == 2 && !first.StartsWith('$') ? new EnumExpr(parts[0], parts[1]) : new IdentifierExpr(string.Join("::", parts));
+				}
 				return new IdentifierExpr(first);
 			}
 			Error("malformed input");
@@ -1257,7 +1262,7 @@ internal static class GS2Compiler
 			if (ch == '.' && char.IsDigit(Peek(1))) return Number();
 			if (char.IsDigit(ch)) return Number();
 			if (IsIdentStart(ch)) return Identifier();
-			if (ch == '"') return String();
+			if (ch is '"' or '\'') return String();
 			if (ch == ':' && Peek(1) == ':') { _pos += 2; return Make(TokenType.Scope, "::"); }
 			if (ch == ':' && Peek(1) == '=') { _pos += 2; return Make(TokenType.Assign, ":="); }
 			if (ch == '+' && Peek(1) == '=') { _pos += 2; return Make(TokenType.AddAssign, "+="); }
@@ -1363,14 +1368,15 @@ internal static class GS2Compiler
 
 		private Token String()
 		{
+			var quote = _code[_pos];
 			_pos++;
 			StringBuilder builder = new();
-			while (_pos < _code.Length && _code[_pos] != '"')
+			while (_pos < _code.Length && _code[_pos] != quote)
 			{
 				if (_code[_pos] == '\\' && _pos + 1 < _code.Length)
 				{
 					_pos++;
-					builder.Append(_code[_pos] switch { 'n' => '\n', 't' => '\t', 'r' => '\r', '"' => '"', '\\' => '\\', var c => c });
+					builder.Append(_code[_pos] switch { 'n' => '\n', 't' => '\t', 'r' => '\r', '"' => '"', '\'' => '\'', '\\' => '\\', var c => c });
 					_pos++;
 				}
 				else builder.Append(_code[_pos++]);
