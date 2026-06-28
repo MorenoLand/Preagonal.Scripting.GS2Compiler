@@ -195,17 +195,18 @@ internal static class GS2Compiler
 		private Stmt ParseForStatement()
 		{
 			Expect(TokenType.LeftParen);
-			var first = ParseExpression();
+			var first = _current.Type == TokenType.Semicolon ? null : ParseExpression();
 			if (Match(TokenType.Colon))
 			{
+				if (first == null) Error("malformed input");
 				var source = ParseExpression();
 				Expect(TokenType.RightParen);
-				return new ForEachStmt(first, source, _current.Type == TokenType.LeftBrace ? ParseBlock() : [ParseStatement()]);
+				return new ForEachStmt(first ?? new NumberExpr("0"), source, _current.Type == TokenType.LeftBrace ? ParseBlock() : [ParseStatement()]);
 			}
 			Expect(TokenType.Semicolon);
-			var condition = ParseExpression();
+			var condition = _current.Type == TokenType.Semicolon ? new BoolExpr(true) : ParseExpression();
 			Expect(TokenType.Semicolon);
-			var post = ParseExpression();
+			var post = _current.Type == TokenType.RightParen ? null : ParseExpression();
 			Expect(TokenType.RightParen);
 			return new ForStmt(first, condition, post, _current.Type == TokenType.LeftBrace ? ParseBlock() : [ParseStatement()]);
 		}
@@ -650,7 +651,7 @@ internal static class GS2Compiler
 
 		private void EmitFor(ForStmt statement)
 		{
-			Emit(statement.Init);
+			if (statement.Init != null) Emit(statement.Init);
 			var start = _bytecode.OpIndex;
 			Emit(statement.Condition, false, false, 0);
 			if (!IsBooleanExpr(statement.Condition)) _bytecode.Emit(Op.ConvToFloat);
@@ -661,7 +662,7 @@ internal static class GS2Compiler
 			_bytecode.Emit(Op.CmdCall);
 			foreach (var stmt in statement.Body) EmitStatement(stmt);
 			foreach (var patch in continuePatches) _bytecode.PatchShort(patch, _bytecode.OpIndex);
-			Emit(statement.Post);
+			if (statement.Post != null) Emit(statement.Post);
 			_bytecode.Emit(Op.SetIndex);
 			_bytecode.EmitDynamicNumber(start);
 			_continuePatches.Pop();
@@ -1156,7 +1157,7 @@ internal static class GS2Compiler
 			BlockStmt stmt => stmt.Body.Exists(ContainsCall),
 			ReturnStmt expr => ContainsCall(expr.Expression),
 			IfStmt stmt => stmt.ThenBody.Exists(ContainsCall) || stmt.ElseBody.Exists(ContainsCall) || ContainsCall(stmt.Condition),
-			ForStmt stmt => ContainsCall(stmt.Init) || ContainsCall(stmt.Condition) || ContainsCall(stmt.Post) || stmt.Body.Exists(ContainsCall),
+			ForStmt stmt => (stmt.Init != null && ContainsCall(stmt.Init)) || ContainsCall(stmt.Condition) || (stmt.Post != null && ContainsCall(stmt.Post)) || stmt.Body.Exists(ContainsCall),
 			ForEachStmt stmt => ContainsCall(stmt.Name) || ContainsCall(stmt.Source) || stmt.Body.Exists(ContainsCall),
 			WhileStmt stmt => ContainsCall(stmt.Condition) || stmt.Body.Exists(ContainsCall),
 			WithStmt stmt => ContainsCall(stmt.Target) || stmt.Body.Exists(ContainsCall),
@@ -1538,7 +1539,7 @@ internal static class GS2Compiler
 	private sealed record BlockStmt(List<Stmt> Body) : Stmt;
 	private sealed record ReturnStmt(Expr Expression) : Stmt;
 	private sealed record IfStmt(Expr Condition, List<Stmt> ThenBody, List<Stmt> ElseBody) : Stmt;
-	private sealed record ForStmt(Expr Init, Expr Condition, Expr Post, List<Stmt> Body) : Stmt;
+	private sealed record ForStmt(Expr? Init, Expr Condition, Expr? Post, List<Stmt> Body) : Stmt;
 	private sealed record ForEachStmt(Expr Name, Expr Source, List<Stmt> Body) : Stmt;
 	private sealed record WhileStmt(Expr Condition, List<Stmt> Body) : Stmt;
 	private sealed record WithStmt(Expr Target, List<Stmt> Body) : Stmt;
