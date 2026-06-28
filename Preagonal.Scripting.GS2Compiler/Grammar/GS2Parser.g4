@@ -13,7 +13,7 @@ block: LBRACE statement* RBRACE;
 statement: block | ifStatement | forStatement | whileStatement | switchStatement | withStatement | newStatement | returnStatement | breakStatement | continueStatement | expressionStatement | SEMI;
 ifStatement: IF LPAREN expression RPAREN statement (ELSE statement | ELSEIF ifTail)?;
 ifTail: LPAREN expression RPAREN statement (ELSE statement | ELSEIF ifTail)?;
-forStatement: FOR LPAREN expression? SEMI expression? SEMI expression? RPAREN statement | FOR LPAREN expression COLON expression RPAREN statement;
+forStatement: FOR LPAREN expression SEMI expression SEMI expression? RPAREN statement | FOR LPAREN SEMI expression SEMI expression? RPAREN statement | FOR LPAREN expression COLON expression RPAREN statement;
 whileStatement: WHILE LPAREN expression RPAREN statement;
 switchStatement: SWITCH LPAREN expression RPAREN LBRACE switchCase* RBRACE;
 switchCase: (CASE expression | DEFAULT) COLON statement*;
