@@ -133,6 +133,13 @@ internal static class GS2Compiler
 				return new IfStmt(condition, thenBody, elseBody);
 			}
 			if (Match(TokenType.For)) return ParseForStatement();
+			if (Match(TokenType.With))
+			{
+				Expect(TokenType.LeftParen);
+				var target = ParseExpression();
+				Expect(TokenType.RightParen);
+				return new WithStmt(target, _current.Type == TokenType.LeftBrace ? ParseBlock() : [ParseStatement()]);
+			}
 			var before = _current;
 			var exprStatement = new ExprStmt(ParseExpression());
 			Expect(TokenType.Semicolon);
@@ -440,6 +447,7 @@ internal static class GS2Compiler
 			else if (statement is IfStmt ifStatement) EmitIf(ifStatement);
 			else if (statement is ForStmt forStatement) EmitFor(forStatement);
 			else if (statement is ForEachStmt forEachStatement) EmitForEach(forEachStatement);
+			else if (statement is WithStmt withStatement) EmitWith(withStatement);
 		}
 
 		private void EmitIf(IfStmt statement)
@@ -492,6 +500,17 @@ internal static class GS2Compiler
 			_bytecode.EmitDynamicNumber(start);
 			_bytecode.PatchShort(breakLoc, _bytecode.OpIndex);
 			_bytecode.Emit(Op.IndexDec);
+		}
+
+		private void EmitWith(WithStmt statement)
+		{
+			Emit(statement.Target);
+			_bytecode.Emit(Op.ConvToObject);
+			_bytecode.Emit(Op.With);
+			var exitLoc = _bytecode.EmitNumberOperandPlaceholder();
+			foreach (var stmt in statement.Body) EmitStatement(stmt);
+			_bytecode.Emit(Op.WithEnd);
+			_bytecode.PatchShort(exitLoc, _bytecode.OpIndex);
 		}
 
 		private void Emit(Expr expr, bool copyAssignmentTarget, bool logicalInline, int suppressedLogicalPatchOffset)
@@ -563,6 +582,7 @@ internal static class GS2Compiler
 					break;
 				case MemberExpr member:
 					Emit(member.Object);
+					if (member.Object is IdentifierExpr memberId && memberId.Name != "temp") _bytecode.Emit(Op.ConvToObject);
 					_bytecode.Emit(Op.TypeVar);
 					_bytecode.EmitDynamicStringIndex(_bytecode.GetString(member.Name));
 					_bytecode.Emit(Op.MemberAccess);
@@ -686,6 +706,10 @@ internal static class GS2Compiler
 		{
 			ExprStmt expr => ContainsCall(expr.Expression),
 			ReturnStmt expr => ContainsCall(expr.Expression),
+			IfStmt stmt => stmt.ThenBody.Exists(ContainsCall) || stmt.ElseBody.Exists(ContainsCall) || ContainsCall(stmt.Condition),
+			ForStmt stmt => ContainsCall(stmt.Init) || ContainsCall(stmt.Condition) || ContainsCall(stmt.Post) || stmt.Body.Exists(ContainsCall),
+			ForEachStmt stmt => ContainsCall(stmt.Name) || ContainsCall(stmt.Source) || stmt.Body.Exists(ContainsCall),
+			WithStmt stmt => ContainsCall(stmt.Target) || stmt.Body.Exists(ContainsCall),
 			_ => false
 		};
 
@@ -968,6 +992,7 @@ internal static class GS2Compiler
 				"if" => TokenType.If,
 				"else" => TokenType.Else,
 				"for" => TokenType.For,
+				"with" => TokenType.With,
 				"true" => TokenType.True,
 				"false" => TokenType.False,
 				"null" => TokenType.Null,
@@ -1005,7 +1030,7 @@ internal static class GS2Compiler
 		private static bool IsIdentPart(char c) => char.IsLetterOrDigit(c) || c is '_' or '$';
 	}
 
-	private enum TokenType { Unknown, End, Identifier, Number, String, Const, Enum, Function, Return, If, Else, For, True, False, Null, Assign, AddAssign, SubAssign, MulAssign, DivAssign, ModAssign, CatAssign, Semicolon, Comma, Colon, Question, Dot, Scope, LeftBrace, RightBrace, LeftParen, RightParen, LeftBracket, RightBracket, Minus, Plus, Star, Slash, Percent, Caret, At, Not, Equal, NotEqual, Less, LessEqual, Greater, GreaterEqual, And, Or, BitAnd, BitOr, ShiftLeft, ShiftRight, Increment, Decrement }
+	private enum TokenType { Unknown, End, Identifier, Number, String, Const, Enum, Function, Return, If, Else, For, With, True, False, Null, Assign, AddAssign, SubAssign, MulAssign, DivAssign, ModAssign, CatAssign, Semicolon, Comma, Colon, Question, Dot, Scope, LeftBrace, RightBrace, LeftParen, RightParen, LeftBracket, RightBracket, Minus, Plus, Star, Slash, Percent, Caret, At, Not, Equal, NotEqual, Less, LessEqual, Greater, GreaterEqual, And, Or, BitAnd, BitOr, ShiftLeft, ShiftRight, Increment, Decrement }
 	private sealed record Token(TokenType Type, string Text, int Line, int Column) { public string LineText { get; init; } = ""; }
 	private sealed record ProgramNode(Dictionary<string, Expr> Constants, Dictionary<string, Dictionary<string, int>> Enums, List<FunctionNode> Functions);
 	private sealed record FunctionNode(string Name, string? ObjectName, bool Public, List<string> Args, List<Stmt> Body);
@@ -1015,6 +1040,7 @@ internal static class GS2Compiler
 	private sealed record IfStmt(Expr Condition, List<Stmt> ThenBody, List<Stmt> ElseBody) : Stmt;
 	private sealed record ForStmt(Expr Init, Expr Condition, Expr Post, List<Stmt> Body) : Stmt;
 	private sealed record ForEachStmt(Expr Name, Expr Source, List<Stmt> Body) : Stmt;
+	private sealed record WithStmt(Expr Target, List<Stmt> Body) : Stmt;
 	private abstract record Expr;
 	private sealed record BinaryExpr(Expr Left, string Op, Expr Right) : Expr;
 	private sealed record TernaryExpr(Expr Condition, Expr WhenTrue, Expr WhenFalse) : Expr;
@@ -1085,6 +1111,8 @@ internal static class GS2Compiler
 		ArrayAssign = 132,
 		ArrayMultiDim = 133,
 		ArrayMultiDimAssign = 134,
+		With = 150,
+		WithEnd = 151,
 		Foreach = 163,
 		InlineConditional = 44,
 		Ret = 7,
