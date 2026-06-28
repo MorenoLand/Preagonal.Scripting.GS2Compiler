@@ -123,6 +123,11 @@ internal static class GS2Compiler
 				Expect(TokenType.Semicolon);
 				return new ReturnStmt(expr);
 			}
+			if (Match(TokenType.Break))
+			{
+				Expect(TokenType.Semicolon);
+				return new BreakStmt();
+			}
 			if (Match(TokenType.If))
 			{
 				Expect(TokenType.LeftParen);
@@ -140,6 +145,7 @@ internal static class GS2Compiler
 				Expect(TokenType.RightParen);
 				return new WithStmt(target, _current.Type == TokenType.LeftBrace ? ParseBlock() : [ParseStatement()]);
 			}
+			if (Match(TokenType.Switch)) return ParseSwitchStatement();
 			var before = _current;
 			var exprStatement = new ExprStmt(ParseExpression());
 			Expect(TokenType.Semicolon);
@@ -163,6 +169,32 @@ internal static class GS2Compiler
 			var post = ParseExpression();
 			Expect(TokenType.RightParen);
 			return new ForStmt(first, condition, post, _current.Type == TokenType.LeftBrace ? ParseBlock() : [ParseStatement()]);
+		}
+
+		private Stmt ParseSwitchStatement()
+		{
+			Expect(TokenType.LeftParen);
+			var expr = ParseExpression();
+			Expect(TokenType.RightParen);
+			Expect(TokenType.LeftBrace);
+			List<SwitchCase> cases = [];
+			while (_current.Type != TokenType.RightBrace && _current.Type != TokenType.End)
+			{
+				List<Expr?> labels = [];
+				while (_current.Type is TokenType.Case or TokenType.Default)
+				{
+					if (Match(TokenType.Case)) labels.Add(ParseExpression());
+					else { Match(TokenType.Default); labels.Add(null); }
+					Expect(TokenType.Colon);
+				}
+				List<Stmt> statements = [];
+				while (_current.Type is not TokenType.Case and not TokenType.Default and not TokenType.RightBrace and not TokenType.End)
+					statements.Add(ParseStatement());
+				if (labels.Count > 1) labels.Reverse();
+				cases.Add(new(labels, statements));
+			}
+			Expect(TokenType.RightBrace);
+			return new SwitchStmt(expr, cases);
 		}
 
 		private Expr ParseExpression() => ParseAssignment();
@@ -398,6 +430,7 @@ internal static class GS2Compiler
 		private readonly BytecodeWriter _bytecode;
 		private readonly Dictionary<string, Expr> _constants;
 		private readonly Dictionary<string, Dictionary<string, int>> _enums;
+		private readonly Stack<List<int>> _breakPatches = new();
 
 		public Emitter(BytecodeWriter bytecode, Dictionary<string, Expr> constants, Dictionary<string, Dictionary<string, int>> enums)
 		{
@@ -448,6 +481,8 @@ internal static class GS2Compiler
 			else if (statement is ForStmt forStatement) EmitFor(forStatement);
 			else if (statement is ForEachStmt forEachStatement) EmitForEach(forEachStatement);
 			else if (statement is WithStmt withStatement) EmitWith(withStatement);
+			else if (statement is SwitchStmt switchStatement) EmitSwitch(switchStatement);
+			else if (statement is BreakStmt) EmitBreak();
 		}
 
 		private void EmitIf(IfStmt statement)
@@ -511,6 +546,47 @@ internal static class GS2Compiler
 			foreach (var stmt in statement.Body) EmitStatement(stmt);
 			_bytecode.Emit(Op.WithEnd);
 			_bytecode.PatchShort(exitLoc, _bytecode.OpIndex);
+		}
+
+		private void EmitSwitch(SwitchStmt statement)
+		{
+			_bytecode.Emit(Op.SetIndex);
+			var caseTestLoc = _bytecode.EmitNumberOperandPlaceholder();
+			List<int> caseStarts = [];
+			List<int> breakPatches = [];
+			_breakPatches.Push(breakPatches);
+			foreach (var switchCase in statement.Cases)
+			{
+				var start = _bytecode.OpIndex;
+				foreach (var _ in switchCase.Labels) caseStarts.Add(start);
+				foreach (var stmt in switchCase.Body) EmitStatement(stmt);
+			}
+			_breakPatches.Pop();
+			_bytecode.PatchShort(caseTestLoc, _bytecode.OpIndex);
+			Emit(statement.Expression);
+			var caseIndex = 0;
+			foreach (var switchCase in statement.Cases)
+			foreach (var label in switchCase.Labels)
+			{
+				if (label != null)
+				{
+					_bytecode.Emit(Op.CopyLastOp);
+					Emit(label);
+					_bytecode.Emit(Op.Eq);
+					_bytecode.Emit(Op.SetIndexTrue);
+				}
+				else _bytecode.Emit(Op.SetIndex);
+				_bytecode.EmitDynamicNumber(caseStarts[caseIndex++]);
+			}
+			foreach (var patch in breakPatches) _bytecode.PatchShort(patch, _bytecode.OpIndex);
+			_bytecode.Emit(Op.IndexDec);
+		}
+
+		private void EmitBreak()
+		{
+			if (_breakPatches.Count == 0) return;
+			_bytecode.Emit(Op.SetIndex);
+			_breakPatches.Peek().Add(_bytecode.EmitNumberOperandPlaceholder());
 		}
 
 		private void Emit(Expr expr, bool copyAssignmentTarget, bool logicalInline, int suppressedLogicalPatchOffset)
@@ -710,6 +786,7 @@ internal static class GS2Compiler
 			ForStmt stmt => ContainsCall(stmt.Init) || ContainsCall(stmt.Condition) || ContainsCall(stmt.Post) || stmt.Body.Exists(ContainsCall),
 			ForEachStmt stmt => ContainsCall(stmt.Name) || ContainsCall(stmt.Source) || stmt.Body.Exists(ContainsCall),
 			WithStmt stmt => ContainsCall(stmt.Target) || stmt.Body.Exists(ContainsCall),
+			SwitchStmt stmt => ContainsCall(stmt.Expression) || stmt.Cases.Exists(c => c.Body.Exists(ContainsCall) || c.Labels.Exists(label => label != null && ContainsCall(label))),
 			_ => false
 		};
 
@@ -993,6 +1070,10 @@ internal static class GS2Compiler
 				"else" => TokenType.Else,
 				"for" => TokenType.For,
 				"with" => TokenType.With,
+				"switch" => TokenType.Switch,
+				"case" => TokenType.Case,
+				"default" => TokenType.Default,
+				"break" => TokenType.Break,
 				"true" => TokenType.True,
 				"false" => TokenType.False,
 				"null" => TokenType.Null,
@@ -1030,7 +1111,7 @@ internal static class GS2Compiler
 		private static bool IsIdentPart(char c) => char.IsLetterOrDigit(c) || c is '_' or '$';
 	}
 
-	private enum TokenType { Unknown, End, Identifier, Number, String, Const, Enum, Function, Return, If, Else, For, With, True, False, Null, Assign, AddAssign, SubAssign, MulAssign, DivAssign, ModAssign, CatAssign, Semicolon, Comma, Colon, Question, Dot, Scope, LeftBrace, RightBrace, LeftParen, RightParen, LeftBracket, RightBracket, Minus, Plus, Star, Slash, Percent, Caret, At, Not, Equal, NotEqual, Less, LessEqual, Greater, GreaterEqual, And, Or, BitAnd, BitOr, ShiftLeft, ShiftRight, Increment, Decrement }
+	private enum TokenType { Unknown, End, Identifier, Number, String, Const, Enum, Function, Return, If, Else, For, With, Switch, Case, Default, Break, True, False, Null, Assign, AddAssign, SubAssign, MulAssign, DivAssign, ModAssign, CatAssign, Semicolon, Comma, Colon, Question, Dot, Scope, LeftBrace, RightBrace, LeftParen, RightParen, LeftBracket, RightBracket, Minus, Plus, Star, Slash, Percent, Caret, At, Not, Equal, NotEqual, Less, LessEqual, Greater, GreaterEqual, And, Or, BitAnd, BitOr, ShiftLeft, ShiftRight, Increment, Decrement }
 	private sealed record Token(TokenType Type, string Text, int Line, int Column) { public string LineText { get; init; } = ""; }
 	private sealed record ProgramNode(Dictionary<string, Expr> Constants, Dictionary<string, Dictionary<string, int>> Enums, List<FunctionNode> Functions);
 	private sealed record FunctionNode(string Name, string? ObjectName, bool Public, List<string> Args, List<Stmt> Body);
@@ -1041,6 +1122,9 @@ internal static class GS2Compiler
 	private sealed record ForStmt(Expr Init, Expr Condition, Expr Post, List<Stmt> Body) : Stmt;
 	private sealed record ForEachStmt(Expr Name, Expr Source, List<Stmt> Body) : Stmt;
 	private sealed record WithStmt(Expr Target, List<Stmt> Body) : Stmt;
+	private sealed record SwitchStmt(Expr Expression, List<SwitchCase> Cases) : Stmt;
+	private sealed record BreakStmt : Stmt;
+	private sealed record SwitchCase(List<Expr?> Labels, List<Stmt> Body);
 	private abstract record Expr;
 	private sealed record BinaryExpr(Expr Left, string Op, Expr Right) : Expr;
 	private sealed record TernaryExpr(Expr Condition, Expr WhenTrue, Expr WhenFalse) : Expr;
