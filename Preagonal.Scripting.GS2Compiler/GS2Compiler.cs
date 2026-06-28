@@ -890,6 +890,9 @@ internal static class GS2Compiler
 				case IdentifierExpr id when _constants.TryGetValue(id.Name, out var constant):
 					Emit(constant);
 					break;
+				case IdentifierExpr { Name: "this" }:
+					_bytecode.Emit(Op.This);
+					break;
 				case IdentifierExpr { Name: "temp" }:
 					_bytecode.Emit(Op.Temp);
 					break;
@@ -1059,7 +1062,7 @@ internal static class GS2Compiler
 
 		private static bool IsComparisonOp(string op) => op is "<" or "<=" or "=<" or ">" or ">=" or "=>";
 
-		private static bool NeedsNumericConversion(Expr expr) => expr is IdentifierExpr or MemberExpr or DynamicMemberExpr or DynamicVarExpr or CallExpr;
+		private static bool NeedsNumericConversion(Expr expr) => expr is IdentifierExpr or MemberExpr or DynamicMemberExpr or DynamicVarExpr or CallExpr or ArrayIndexExpr or MultiArrayIndexExpr;
 
 		private static bool NeedsObjectConversion(Expr expr) => expr switch
 		{
