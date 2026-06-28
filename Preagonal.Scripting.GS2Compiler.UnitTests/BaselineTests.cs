@@ -35,6 +35,19 @@ public class BaselineTests
 		Assert.Equal(baseline.BytecodeHash, hash);
 	}
 
+	[Theory]
+	[InlineData("01_syntax_errors.gs2")]
+	[InlineData("02_semantic_errors.gs2")]
+	[InlineData("03_string_escaping.gs2")]
+	public void Given_error_fixture_When_compiling_Then_it_fails(string fileName)
+	{
+		var root = FindRepoRoot();
+		var result = Interface.CompileCode(File.ReadAllText(Path.Combine(root, "tests", "scripts", "error_cases", fileName)), withHeader: false);
+
+		Assert.False(result.Success);
+		Assert.Empty(result.ByteCode);
+	}
+
 	private static string FindRepoRoot()
 	{
 		var dir = AppContext.BaseDirectory;
