@@ -42,6 +42,7 @@ internal static class GS2Compiler
 			{
 				if (Match(TokenType.Const)) ParseConst();
 				else if (Match(TokenType.Enum)) ParseEnum();
+				else if (Match(TokenType.Public)) { Expect(TokenType.Function); functions.Add(ParseFunction(true, null)); }
 				else if (Match(TokenType.Function)) functions.Add(ParseFunction(false, null));
 				else Advance();
 			}
@@ -83,10 +84,10 @@ internal static class GS2Compiler
 				name = Expect(TokenType.Identifier).Text;
 			}
 			Expect(TokenType.LeftParen);
-			List<string> args = [];
+			List<Expr> args = [];
 			if (_current.Type != TokenType.RightParen)
 			{
-				do args.Add(Expect(TokenType.Identifier).Text); while (Match(TokenType.Comma));
+				do args.Add(ParseExpression()); while (Match(TokenType.Comma));
 			}
 			Expect(TokenType.RightParen);
 			var body = _current.Type switch
@@ -117,6 +118,7 @@ internal static class GS2Compiler
 
 		private Stmt ParseStatement()
 		{
+			if (_current.Type == TokenType.LeftBrace) return new BlockStmt(ParseBlock());
 			if (Match(TokenType.Return))
 			{
 				var expr = _current.Type == TokenType.Semicolon ? new NumberExpr("0") : ParseExpression();
@@ -134,7 +136,7 @@ internal static class GS2Compiler
 				var condition = ParseExpression();
 				Expect(TokenType.RightParen);
 				var thenBody = _current.Type == TokenType.LeftBrace ? ParseBlock() : [ParseStatement()];
-				var elseBody = Match(TokenType.Else) ? (_current.Type == TokenType.LeftBrace ? ParseBlock() : [ParseStatement()]) : [];
+				var elseBody = Match(TokenType.Else) ? (_current.Type == TokenType.LeftBrace ? ParseBlock() : [ParseStatement()]) : Match(TokenType.ElseIf) ? [ParseElseIfStatement()] : [];
 				return new IfStmt(condition, thenBody, elseBody);
 			}
 			if (Match(TokenType.For)) return ParseForStatement();
@@ -151,6 +153,16 @@ internal static class GS2Compiler
 			Expect(TokenType.Semicolon);
 			if (before == _current) Advance();
 			return exprStatement;
+		}
+
+		private Stmt ParseElseIfStatement()
+		{
+			Expect(TokenType.LeftParen);
+			var condition = ParseExpression();
+			Expect(TokenType.RightParen);
+			var thenBody = _current.Type == TokenType.LeftBrace ? ParseBlock() : [ParseStatement()];
+			var elseBody = Match(TokenType.Else) ? (_current.Type == TokenType.LeftBrace ? ParseBlock() : [ParseStatement()]) : Match(TokenType.ElseIf) ? [ParseElseIfStatement()] : [];
+			return new IfStmt(condition, thenBody, elseBody);
 		}
 
 		private Stmt ParseForStatement()
@@ -256,8 +268,29 @@ internal static class GS2Compiler
 		private Expr ParseEquality()
 		{
 			var expr = ParseComparison();
-			while (_current.Type is TokenType.Equal or TokenType.NotEqual)
+			while (_current.Type is TokenType.Equal or TokenType.NotEqual or TokenType.In)
 			{
+				if (Match(TokenType.In))
+				{
+					if (Match(TokenType.BitOr))
+					{
+						var lower = ParseComparison();
+						Expect(TokenType.Comma);
+						var upper = ParseComparison();
+						Expect(TokenType.BitOr);
+						expr = new InExpr(expr, lower, upper);
+					}
+					else if (Match(TokenType.Less))
+					{
+						var lower = ParseComparison();
+						Expect(TokenType.Comma);
+						var upper = ParseComparison();
+						Expect(TokenType.Greater);
+						expr = new InExpr(expr, lower, upper);
+					}
+					else expr = new InExpr(expr, ParseComparison(), null);
+					continue;
+				}
 				var op = _current.Text;
 				Advance();
 				expr = new BinaryExpr(expr, op, ParseComparison());
@@ -357,6 +390,18 @@ internal static class GS2Compiler
 			if (Match(TokenType.Null)) return new NullExpr();
 			if (Match(TokenType.New))
 			{
+				if (_current.Type == TokenType.LeftBracket)
+				{
+					List<int> dimensions = [];
+					do
+					{
+						Expect(TokenType.LeftBracket);
+						dimensions.Add(int.Parse(Expect(TokenType.Number).Text, NumberStyles.Integer, CultureInfo.InvariantCulture));
+						Expect(TokenType.RightBracket);
+					}
+					while (_current.Type == TokenType.LeftBracket);
+					return new NewArrayExpr(dimensions);
+				}
 				var typeName = Expect(TokenType.Identifier).Text;
 				Expect(TokenType.LeftParen);
 				List<Expr> args = [];
@@ -462,7 +507,7 @@ internal static class GS2Compiler
 			functionName += node.Name;
 			_bytecode.AddFunction(functionName, _bytecode.OpIndex, 0);
 			_bytecode.Emit(Op.TypeArray);
-			for (var i = node.Args.Count - 1; i >= 0; --i) Emit(new IdentifierExpr(node.Args[i]));
+			for (var i = node.Args.Count - 1; i >= 0; --i) Emit(node.Args[i]);
 			_bytecode.Emit(Op.FuncParamsEnd);
 			_bytecode.Emit(Op.Jmp);
 			if (node.Body.Exists(ContainsCall)) _bytecode.Emit(Op.CmdCall);
@@ -497,6 +542,7 @@ internal static class GS2Compiler
 			else if (statement is WithStmt withStatement) EmitWith(withStatement);
 			else if (statement is SwitchStmt switchStatement) EmitSwitch(switchStatement);
 			else if (statement is BreakStmt) EmitBreak();
+			else if (statement is BlockStmt blockStatement) foreach (var stmt in blockStatement.Body) EmitStatement(stmt);
 		}
 
 		private void EmitIf(IfStmt statement)
@@ -661,6 +707,32 @@ internal static class GS2Compiler
 					Emit(ternary.WhenFalse);
 					_bytecode.PatchShort(successLoc, _bytecode.OpIndex);
 					break;
+				case BinaryExpr { Op: " " or "\n" or "\t", Left: var left, Right: var right } spacedConcat:
+					Emit(left);
+					if (left is not StringExpr) _bytecode.Emit(Op.ConvToString);
+					_bytecode.Emit(Op.TypeString);
+					_bytecode.EmitDynamicStringIndex(_bytecode.GetString(spacedConcat.Op));
+					_bytecode.Emit(Op.Join);
+					Emit(right);
+					if (right is not StringExpr) _bytecode.Emit(Op.ConvToString);
+					_bytecode.Emit(Op.Join);
+					break;
+				case InExpr inExpr:
+					Emit(inExpr.Expression);
+					Emit(inExpr.Lower);
+					if (inExpr.Upper != null)
+					{
+						if (!IsNumberExpr(inExpr.Lower)) _bytecode.Emit(Op.ConvToFloat);
+						Emit(inExpr.Upper);
+						if (!IsNumberExpr(inExpr.Upper)) _bytecode.Emit(Op.ConvToFloat);
+						_bytecode.Emit(Op.InRange);
+					}
+					else
+					{
+						_bytecode.Emit(Op.ConvToObject);
+						_bytecode.Emit(Op.InObj);
+					}
+					break;
 				case BinaryExpr binary:
 					Emit(binary.Left);
 					if ((IsNumericOp(binary.Op) || IsComparisonOp(binary.Op)) && NeedsNumericConversion(binary.Left)) _bytecode.Emit(Op.ConvToFloat);
@@ -767,8 +839,18 @@ internal static class GS2Compiler
 					_bytecode.EmitDynamicStringIndex(typeNameIndex);
 					_bytecode.Emit(Op.NewObject);
 					break;
+				case NewArrayExpr array:
+					for (var i = 0; i < array.Dimensions.Count; ++i)
+					{
+						_bytecode.Emit(Op.TypeNumber);
+						_bytecode.EmitDynamicNumber(array.Dimensions[i]);
+						_bytecode.Emit(i == 0 ? Op.ArrayNew : Op.ArrayNewMultiDim);
+					}
+					break;
 				case LambdaExpr lambda:
-					EmitFunction(new(lambda.Name, null, true, lambda.Args, lambda.Body), false);
+					List<Expr> lambdaArgs = [];
+					foreach (var arg in lambda.Args) lambdaArgs.Add(new IdentifierExpr(arg));
+					EmitFunction(new(lambda.Name, null, true, lambdaArgs, lambda.Body), false);
 					_bytecode.Emit(Op.This);
 					_bytecode.Emit(Op.TypeVar);
 					_bytecode.EmitDynamicStringIndex(_bytecode.GetString(lambda.Name));
@@ -805,6 +887,7 @@ internal static class GS2Compiler
 		private static bool IsBooleanExpr(Expr expr) => expr switch
 		{
 			BinaryExpr { Op: "==" or "!=" or "<" or "<=" or "=<" or ">" or ">=" or "=>" or "&&" or "||" } => true,
+			InExpr => true,
 			UnaryExpr { Op: "!" } => true,
 			_ => false
 		};
@@ -812,6 +895,7 @@ internal static class GS2Compiler
 		private static bool ContainsCall(Stmt statement) => statement switch
 		{
 			ExprStmt expr => ContainsCall(expr.Expression),
+			BlockStmt stmt => stmt.Body.Exists(ContainsCall),
 			ReturnStmt expr => ContainsCall(expr.Expression),
 			IfStmt stmt => stmt.ThenBody.Exists(ContainsCall) || stmt.ElseBody.Exists(ContainsCall) || ContainsCall(stmt.Condition),
 			ForStmt stmt => ContainsCall(stmt.Init) || ContainsCall(stmt.Condition) || ContainsCall(stmt.Post) || stmt.Body.Exists(ContainsCall),
@@ -825,6 +909,7 @@ internal static class GS2Compiler
 		{
 			CallExpr => true,
 			MethodCallExpr => true,
+			InExpr inExpr => ContainsCall(inExpr.Expression) || ContainsCall(inExpr.Lower) || (inExpr.Upper != null && ContainsCall(inExpr.Upper)),
 			BinaryExpr binary => ContainsCall(binary.Left) || ContainsCall(binary.Right),
 			UnaryExpr unary => ContainsCall(unary.Expression),
 			MemberExpr member => ContainsCall(member.Object),
@@ -1023,6 +1108,7 @@ internal static class GS2Compiler
 			}
 			if (_pos >= _code.Length) return Make(TokenType.End, "");
 			var ch = _code[_pos];
+			if (ch == '0' && (Peek(1) == 'x' || Peek(1) == 'X')) return HexNumber();
 			if (char.IsDigit(ch)) return Number();
 			if (IsIdentStart(ch)) return Identifier();
 			if (ch == '"') return String();
@@ -1086,6 +1172,15 @@ internal static class GS2Compiler
 			return Make(TokenType.Number, _code[start.._pos]);
 		}
 
+		private Token HexNumber()
+		{
+			var start = _pos;
+			_pos += 2;
+			while (_pos < _code.Length && Uri.IsHexDigit(_code[_pos])) _pos++;
+			var value = Convert.ToInt32(_code[start.._pos], 16);
+			return Make(TokenType.Number, value.ToString(CultureInfo.InvariantCulture));
+		}
+
 		private Token Identifier()
 		{
 			var start = _pos++;
@@ -1096,12 +1191,18 @@ internal static class GS2Compiler
 				"const" => TokenType.Const,
 				"enum" => TokenType.Enum,
 				"function" => TokenType.Function,
+				"public" => TokenType.Public,
 				"return" => TokenType.Return,
 				"if" => TokenType.If,
 				"else" => TokenType.Else,
+				"elseif" => TokenType.ElseIf,
 				"for" => TokenType.For,
 				"with" => TokenType.With,
 				"new" => TokenType.New,
+				"in" => TokenType.In,
+				"SPC" => TokenType.At,
+				"NL" => TokenType.At,
+				"TAB" => TokenType.At,
 				"switch" => TokenType.Switch,
 				"case" => TokenType.Case,
 				"default" => TokenType.Default,
@@ -1110,7 +1211,7 @@ internal static class GS2Compiler
 				"false" => TokenType.False,
 				"null" => TokenType.Null,
 				_ => TokenType.Identifier
-			}, text);
+			}, text switch { "SPC" => " ", "NL" => "\n", "TAB" => "\t", _ => text });
 		}
 
 		private Token String()
@@ -1143,12 +1244,13 @@ internal static class GS2Compiler
 		private static bool IsIdentPart(char c) => char.IsLetterOrDigit(c) || c is '_' or '$';
 	}
 
-	private enum TokenType { Unknown, End, Identifier, Number, String, Const, Enum, Function, Return, If, Else, For, With, New, Switch, Case, Default, Break, True, False, Null, Assign, AddAssign, SubAssign, MulAssign, DivAssign, ModAssign, CatAssign, Semicolon, Comma, Colon, Question, Dot, Scope, LeftBrace, RightBrace, LeftParen, RightParen, LeftBracket, RightBracket, Minus, Plus, Star, Slash, Percent, Caret, At, Not, Equal, NotEqual, Less, LessEqual, Greater, GreaterEqual, And, Or, BitAnd, BitOr, ShiftLeft, ShiftRight, Increment, Decrement }
+	private enum TokenType { Unknown, End, Identifier, Number, String, Const, Enum, Function, Public, Return, If, Else, ElseIf, For, With, New, In, Switch, Case, Default, Break, True, False, Null, Assign, AddAssign, SubAssign, MulAssign, DivAssign, ModAssign, CatAssign, Semicolon, Comma, Colon, Question, Dot, Scope, LeftBrace, RightBrace, LeftParen, RightParen, LeftBracket, RightBracket, Minus, Plus, Star, Slash, Percent, Caret, At, Not, Equal, NotEqual, Less, LessEqual, Greater, GreaterEqual, And, Or, BitAnd, BitOr, ShiftLeft, ShiftRight, Increment, Decrement }
 	private sealed record Token(TokenType Type, string Text, int Line, int Column) { public string LineText { get; init; } = ""; }
 	private sealed record ProgramNode(Dictionary<string, Expr> Constants, Dictionary<string, Dictionary<string, int>> Enums, List<FunctionNode> Functions);
-	private sealed record FunctionNode(string Name, string? ObjectName, bool Public, List<string> Args, List<Stmt> Body);
+	private sealed record FunctionNode(string Name, string? ObjectName, bool Public, List<Expr> Args, List<Stmt> Body);
 	private abstract record Stmt;
 	private sealed record ExprStmt(Expr Expression) : Stmt;
+	private sealed record BlockStmt(List<Stmt> Body) : Stmt;
 	private sealed record ReturnStmt(Expr Expression) : Stmt;
 	private sealed record IfStmt(Expr Condition, List<Stmt> ThenBody, List<Stmt> ElseBody) : Stmt;
 	private sealed record ForStmt(Expr Init, Expr Condition, Expr Post, List<Stmt> Body) : Stmt;
@@ -1159,6 +1261,7 @@ internal static class GS2Compiler
 	private sealed record SwitchCase(List<Expr?> Labels, List<Stmt> Body);
 	private abstract record Expr;
 	private sealed record BinaryExpr(Expr Left, string Op, Expr Right) : Expr;
+	private sealed record InExpr(Expr Expression, Expr Lower, Expr? Upper) : Expr;
 	private sealed record TernaryExpr(Expr Condition, Expr WhenTrue, Expr WhenFalse) : Expr;
 	private sealed record UnaryExpr(string Op, Expr Expression) : Expr;
 	private sealed record MemberExpr(Expr Object, string Name) : Expr;
@@ -1172,6 +1275,7 @@ internal static class GS2Compiler
 	private sealed record CallExpr(string Name, List<Expr> Args) : Expr;
 	private sealed record MethodCallExpr(Expr Object, string Name, List<Expr> Args) : Expr;
 	private sealed record NewObjectExpr(string TypeName, List<Expr> Args) : Expr;
+	private sealed record NewArrayExpr(List<int> Dimensions) : Expr;
 	private sealed record LambdaExpr(string Name, List<string> Args, List<Stmt> Body) : Expr;
 	private sealed record ArrayLiteralExpr(List<Expr> Values) : Expr;
 	private sealed record FunctionEntry(string Name, int OpIndex, int JmpLoc);
@@ -1200,6 +1304,7 @@ internal static class GS2Compiler
 		MemberAccess = 35,
 		ConvToObject = 36,
 		ArrayEnd = 37,
+		ArrayNew = 38,
 		InlineNew = 40,
 		NewObject = 42,
 		Assign = 50,
@@ -1223,6 +1328,8 @@ internal static class GS2Compiler
 		Gte = 75,
 		BitOr = 76,
 		BitAnd = 77,
+		InRange = 80,
+		InObj = 81,
 		ShiftLeft = 101,
 		ShiftRight = 102,
 		Join = 113,
@@ -1230,6 +1337,7 @@ internal static class GS2Compiler
 		ArrayAssign = 132,
 		ArrayMultiDim = 133,
 		ArrayMultiDimAssign = 134,
+		ArrayNewMultiDim = 142,
 		With = 150,
 		WithEnd = 151,
 		Foreach = 163,
