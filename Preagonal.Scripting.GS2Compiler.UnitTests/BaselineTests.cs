@@ -29,6 +29,7 @@ public class BaselineTests
 	{
 		var root = FindRepoRoot();
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "g2k1", "weaponRailroad Destroyer.gs2")];
+		yield return [Path.Combine(root, "tests", "scripts", "advanced", "g2k1", "weaponShovel.gs2")];
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "graalx", "weaponItems_Chemicals.gs2")];
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "g2k1", "weaponMetal Axe.gs2")];
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "graalx", "weaponVulcan.gs2")];

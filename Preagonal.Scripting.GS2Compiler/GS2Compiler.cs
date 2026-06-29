@@ -829,7 +829,7 @@ internal static class GS2Compiler
 			_newObjectCount--;
 		}
 
-		private void Emit(Expr expr, bool copyAssignmentTarget, bool logicalInline, int suppressedLogicalPatchOffset, bool controlLogical = false)
+		private void Emit(Expr expr, bool copyAssignmentTarget, bool logicalInline, int suppressedLogicalPatchOffset, bool controlLogical = false, bool negatedLogical = false)
 		{
 			switch (expr)
 			{
@@ -882,11 +882,11 @@ internal static class GS2Compiler
 					_bytecode.Emit(Op.Assign);
 					break;
 				case BinaryExpr { Op: "&&" or "||" } logical:
-					Emit(logical.Left, false, false, logical.Left is BinaryExpr { Op: "&&" or "||" } ? 1 : 0, controlLogical);
+					Emit(logical.Left, false, false, logical.Left is BinaryExpr { Op: "&&" or "||" } ? negatedLogical && logical.Op == "||" ? 6 : 1 : 0, controlLogical, negatedLogical);
 					if (!IsBooleanExpr(logical.Left)) _bytecode.Emit(Op.ConvToFloat);
 					_bytecode.Emit(logical.Op == "&&" && controlLogical ? Op.If : logical.Op == "&&" ? Op.And : Op.Or);
 					var loc = _bytecode.EmitNumberOperandPlaceholder();
-					Emit(logical.Right, false, false, 0);
+					Emit(logical.Right, false, false, 0, controlLogical, negatedLogical);
 					if (!IsBooleanExpr(logical.Right)) _bytecode.Emit(Op.ConvToFloat);
 					if (logicalInline) _bytecode.Emit(Op.InlineConditional);
 					if (logical.Op == "&&" && controlLogical && _conditionFailPatches.Count > 0) _conditionFailPatches.Peek().Add(loc);
@@ -1022,7 +1022,7 @@ internal static class GS2Compiler
 					_bytecode.Emit(Op.UnarySub);
 					break;
 				case UnaryExpr { Op: "!", Expression: var notValue }:
-					Emit(notValue, false, false, 0);
+					Emit(notValue, false, false, 0, false, true);
 					if (!IsBooleanExpr(notValue)) _bytecode.Emit(Op.ConvToFloat);
 					_bytecode.Emit(Op.Not);
 					break;
