@@ -1086,6 +1086,13 @@ internal static class GS2Compiler
 					_bytecode.Emit(Op.Call);
 					break;
 				case MethodCallExpr call:
+					if (call.Name == "size" && call.Args.Count == 0)
+					{
+						Emit(call.Object);
+						if (NeedsObjectConversion(call.Object)) _bytecode.Emit(Op.ConvToObject);
+						_bytecode.Emit(Op.ObjSize);
+						break;
+					}
 					_bytecode.Emit(Op.TypeArray);
 					for (var i = call.Args.Count - 1; i >= 0; --i) Emit(call.Args[i]);
 					Emit(call.Object);
@@ -1712,6 +1719,7 @@ internal static class GS2Compiler
 		Char = 103,
 		Join = 113,
 		Translate = 119,
+		ObjSize = 130,
 		Array = 131,
 		ArrayAssign = 132,
 		ArrayMultiDim = 133,

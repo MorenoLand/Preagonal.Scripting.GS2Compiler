@@ -269,6 +269,25 @@ public class InterfaceTests
 		Assert.DoesNotContain("max", strings);
 	}
 
+	[Fact]
+	public void Given_size_method_call_When_compiling_Then_object_size_opcode_is_emitted()
+	{
+		const string scriptText =
+			"""
+						function onCreated() {
+						  temp.count = players.size();
+						}
+			""";
+
+		var result = Interface.CompileCode(scriptText, withHeader: false);
+		var strings = ReadStringTable(result.ByteCode);
+		var code = ReadBytecodeSegment(result.ByteCode);
+
+		Assert.True(result.Success);
+		Assert.Contains((byte)130, code);
+		Assert.DoesNotContain("size", strings);
+	}
+
 	private static List<string> ReadFunctionNames(byte[] bytecode)
 	{
 		var offset = 0;
