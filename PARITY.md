@@ -1,6 +1,6 @@
 # GS2 parity progress
 
-Current advanced fixture score: 52 / 155 byte-for-byte hashes, 53 / 155 byte sizes.
+Current advanced fixture score: 57 / 155 byte-for-byte hashes, 58 / 155 byte sizes.
 
 Locked advanced parity fixtures:
 - `tests/scripts/advanced/g2k1/weaponRailroad Destroyer.gs2`
@@ -35,8 +35,11 @@ Locked advanced parity fixtures:
 - `tests/scripts/advanced/graalx/weaponItems_Cure Virus.gs2`
 - `tests/scripts/advanced/graalx/weaponJobs_Roller.gs2`
 - `tests/scripts/advanced/graalx/weaponLevelGen.gs2`
+- `tests/scripts/advanced/graalx/weaponKuJi_Items.gs2`
 - `tests/scripts/advanced/graalx/weapon-Minimap.gs2`
 - `tests/scripts/advanced/graalx/weapon-NewWeather.gs2`
+- `tests/scripts/advanced/graalx/weapon-NewGangSys.gs2`
+- `tests/scripts/advanced/graalx/weapon-Shake.gs2`
 - `tests/scripts/advanced/graalx/weaponSystems_ArchetypeEditor.gs2`
 - `tests/scripts/advanced/graalx/weaponSystems_Vote.gs2`
 - `tests/scripts/advanced/g2k1/weaponMetal Axe.gs2`
@@ -47,6 +50,8 @@ Locked advanced parity fixtures:
 - `tests/scripts/advanced/graalx/weaponRC_AttributesWindow.gs2`
 - `tests/scripts/advanced/graalx/weaponSystems_TradeMenu.gs2`
 - `tests/scripts/advanced/graalx/weaponSystems_IRC.gs2`
+- `tests/scripts/advanced/graalx/weaponTwinny_Tool.gs2`
+- `tests/scripts/advanced/graalx/weapon-Virus.gs2`
 - `tests/scripts/advanced/graalx/weaponWeapons_Grenade.gs2`
 - `tests/scripts/advanced/loginserver/weapon-Adventure.gs2`
 - `tests/scripts/advanced/loginserver/weapon-IRC_Login4.gs2`

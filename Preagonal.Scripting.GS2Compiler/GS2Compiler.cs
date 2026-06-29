@@ -707,6 +707,8 @@ internal static class GS2Compiler
 			var start = _bytecode.OpIndex;
 			_bytecode.Emit(Op.Foreach);
 			var breakLoc = _bytecode.EmitNumberOperandPlaceholder();
+			List<int> breakPatches = [];
+			_breakPatches.Push(breakPatches);
 			List<int> continuePatches = [];
 			_continuePatches.Push(continuePatches);
 			_bytecode.Emit(Op.CmdCall);
@@ -716,7 +718,9 @@ internal static class GS2Compiler
 			_bytecode.Emit(Op.SetIndex);
 			_bytecode.EmitDynamicNumber(start);
 			_continuePatches.Pop();
+			_breakPatches.Pop();
 			_bytecode.PatchShort(breakLoc, _bytecode.OpIndex);
+			foreach (var patch in breakPatches) _bytecode.PatchShort(patch, _bytecode.OpIndex);
 			_bytecode.Emit(Op.IndexDec);
 		}
 

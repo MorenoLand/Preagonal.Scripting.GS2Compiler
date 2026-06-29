@@ -49,6 +49,7 @@ public class BaselineTests
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "g2k1", "weaponWooden Hammer.gs2")];
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "graalx", "weaponItems_Chemicals.gs2")];
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "graalx", "weaponKinetaro.gs2")];
+		yield return [Path.Combine(root, "tests", "scripts", "advanced", "graalx", "weaponKuJi_Items.gs2")];
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "graalx", "weapon-BuySys.gs2")];
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "graalx", "weapon-NBuySys.gs2")];
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "graalx", "weapon+Presents.gs2")];
@@ -62,6 +63,8 @@ public class BaselineTests
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "graalx", "weaponLevelGen.gs2")];
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "graalx", "weapon-Minimap.gs2")];
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "graalx", "weapon-NewWeather.gs2")];
+		yield return [Path.Combine(root, "tests", "scripts", "advanced", "graalx", "weapon-NewGangSys.gs2")];
+		yield return [Path.Combine(root, "tests", "scripts", "advanced", "graalx", "weapon-Shake.gs2")];
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "graalx", "weaponSystems_ArchetypeEditor.gs2")];
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "graalx", "weaponSystems_Vote.gs2")];
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "g2k1", "weaponMetal Axe.gs2")];
@@ -72,6 +75,8 @@ public class BaselineTests
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "graalx", "weaponRC_AttributesWindow.gs2")];
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "graalx", "weaponSystems_TradeMenu.gs2")];
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "graalx", "weaponSystems_IRC.gs2")];
+		yield return [Path.Combine(root, "tests", "scripts", "advanced", "graalx", "weaponTwinny_Tool.gs2")];
+		yield return [Path.Combine(root, "tests", "scripts", "advanced", "graalx", "weapon-Virus.gs2")];
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "graalx", "weaponWeapons_Grenade.gs2")];
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "loginserver", "weapon-Adventure.gs2")];
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "loginserver", "weapon-IRC_Login4.gs2")];
