@@ -1157,8 +1157,8 @@ internal static class GS2Compiler
 
 		private static bool IsComparisonOp(string op) => op is "<" or "<=" or "=<" or ">" or ">=" or "=>";
 
-		private static bool NeedsNumericConversion(Expr expr) => expr is IdentifierExpr or MemberExpr or DynamicMemberExpr or DynamicVarExpr or CallExpr or ArrayIndexExpr or MultiArrayIndexExpr;
-		private static bool NeedsStringConversion(Expr expr) => expr is not StringExpr and not BinaryExpr { Op: "@" or " " or "\n" or "\t" };
+		private static bool NeedsNumericConversion(Expr expr) => ExpressionTypeOf(expr) != ExprType.Number;
+		private static bool NeedsStringConversion(Expr expr) => ExpressionTypeOf(expr) != ExprType.String;
 
 		private static bool NeedsObjectConversion(Expr expr) => expr switch
 		{
@@ -1167,7 +1167,20 @@ internal static class GS2Compiler
 			_ => true
 		};
 
-		private static bool IsNumberExpr(Expr expr) => expr is NumberExpr or UnaryExpr { Op: "-", Expression: NumberExpr } or CastExpr { Type: "int" or "float" };
+		private static bool IsNumberExpr(Expr expr) => ExpressionTypeOf(expr) == ExprType.Number;
+
+		private static ExprType ExpressionTypeOf(Expr expr) => expr switch
+		{
+			NumberExpr or BoolExpr or InExpr or UnaryExpr { Op: "-" or "!" or "~" or "++" or "--" } or CastExpr { Type: "int" or "float" } => ExprType.Number,
+			BinaryExpr { Op: "+" or "-" or "*" or "/" or "%" or "^" or "==" or "!=" or "<" or "<=" or "=<" or ">" or ">=" or "=>" or "&&" or "||" or "&" or "|" or "xor" or "<<" or ">>" } => ExprType.Number,
+			BinaryExpr { Op: "+=" or "-=" or "*=" or "/=" or "%=" or "^=" or "<<=" or ">>=" or "|=" or "&=" } => ExprType.Number,
+			BinaryExpr { Op: "@" or " " or "\n" or "\t" } or StringExpr or CastExpr { Type: "_" } => ExprType.String,
+			BinaryExpr { Op: "@=" } => ExprType.String,
+			BinaryExpr { Op: "=", Right: var right } => ExpressionTypeOf(right),
+			ArrayLiteralExpr => ExprType.Array,
+			NewObjectExpr or NewArrayExpr or NullExpr => ExprType.Object,
+			_ => ExprType.Unknown
+		};
 
 		private static bool IsBooleanExpr(Expr expr) => expr switch
 		{
@@ -1601,6 +1614,7 @@ internal static class GS2Compiler
 	private sealed record LambdaExpr(string Name, List<Expr> Args, List<Stmt> Body) : Expr;
 	private sealed record ArrayLiteralExpr(List<Expr> Values) : Expr;
 	private sealed record FunctionEntry(string Name, int OpIndex, int JmpLoc);
+	private enum ExprType { Unknown, Number, String, Array, Object }
 
 	private enum Op : byte
 	{
