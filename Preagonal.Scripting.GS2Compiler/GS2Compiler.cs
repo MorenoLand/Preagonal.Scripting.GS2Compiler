@@ -581,6 +581,7 @@ internal static class GS2Compiler
 		private readonly Stack<List<int>> _breakPatches = new();
 		private readonly Stack<List<int>> _continuePatches = new();
 		private readonly Stack<List<int>> _conditionFailPatches = new();
+		private readonly Stack<List<int>> _conditionSuccessPatches = new();
 		private int _newObjectCount;
 
 		public Emitter(BytecodeWriter bytecode, Dictionary<string, Expr> constants, Dictionary<string, Dictionary<string, int>> enums)
@@ -658,10 +659,14 @@ internal static class GS2Compiler
 		private void EmitIf(IfStmt statement)
 		{
 			List<int> conditionFailPatches = [];
+			List<int> conditionSuccessPatches = [];
 			_conditionFailPatches.Push(conditionFailPatches);
+			_conditionSuccessPatches.Push(conditionSuccessPatches);
 			Emit(statement.Condition, false, false, 0, true);
+			_conditionSuccessPatches.Pop();
 			_conditionFailPatches.Pop();
 			if (!IsBooleanExpr(statement.Condition)) _bytecode.Emit(Op.ConvToFloat);
+			foreach (var patch in conditionSuccessPatches) _bytecode.PatchShort(patch, _bytecode.OpIndex);
 			_bytecode.Emit(Op.If);
 			var failLoc = _bytecode.EmitNumberOperandPlaceholder();
 			foreach (var stmt in statement.ThenBody) EmitStatement(stmt);
@@ -682,10 +687,14 @@ internal static class GS2Compiler
 			if (statement.Init != null) Emit(statement.Init);
 			var start = _bytecode.OpIndex;
 			List<int> conditionFailPatches = [];
+			List<int> conditionSuccessPatches = [];
 			_conditionFailPatches.Push(conditionFailPatches);
+			_conditionSuccessPatches.Push(conditionSuccessPatches);
 			Emit(statement.Condition, false, false, 0, true);
+			_conditionSuccessPatches.Pop();
 			_conditionFailPatches.Pop();
 			if (!IsBooleanExpr(statement.Condition)) _bytecode.Emit(Op.ConvToFloat);
+			foreach (var patch in conditionSuccessPatches) _bytecode.PatchShort(patch, _bytecode.OpIndex);
 			_bytecode.Emit(Op.If);
 			var breakLoc = _bytecode.EmitNumberOperandPlaceholder();
 			List<int> continuePatches = [];
@@ -732,10 +741,14 @@ internal static class GS2Compiler
 		{
 			var start = _bytecode.OpIndex;
 			List<int> conditionFailPatches = [];
+			List<int> conditionSuccessPatches = [];
 			_conditionFailPatches.Push(conditionFailPatches);
+			_conditionSuccessPatches.Push(conditionSuccessPatches);
 			Emit(statement.Condition, false, false, 0, true);
+			_conditionSuccessPatches.Pop();
 			_conditionFailPatches.Pop();
 			if (!IsBooleanExpr(statement.Condition)) _bytecode.Emit(Op.ConvToFloat);
+			foreach (var patch in conditionSuccessPatches) _bytecode.PatchShort(patch, _bytecode.OpIndex);
 			List<int> breakPatches = [];
 			_breakPatches.Push(breakPatches);
 			List<int> continuePatches = [];
@@ -905,6 +918,7 @@ internal static class GS2Compiler
 					if (!IsBooleanExpr(logical.Right)) _bytecode.Emit(Op.ConvToFloat);
 					if (logicalInline) _bytecode.Emit(Op.InlineConditional);
 					if (logical.Op == "&&" && controlLogical && _conditionFailPatches.Count > 0) _conditionFailPatches.Peek().Add(loc);
+					else if (logical.Op == "||" && controlLogical && _conditionSuccessPatches.Count > 0) _conditionSuccessPatches.Peek().Add(loc);
 					else _bytecode.PatchShort(loc, _bytecode.OpIndex - (logicalInline ? 1 : 0) + (!logicalInline ? suppressedLogicalPatchOffset : 0));
 					break;
 				case TernaryExpr ternary:
