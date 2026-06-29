@@ -92,6 +92,8 @@ public class BaselineTests
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "loginserver", "weapon-IRC_Login4.gs2")];
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "loginserver", "weapon-Rescripted_IRC_Login3.gs2")];
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "loginserver", "weapon-Rescripted_IRC_Login4.gs2")];
+		yield return [Path.Combine(root, "tests", "scripts", "advanced", "loginserver", "weapon-Rescripted_Serverlist.gs2")];
+		yield return [Path.Combine(root, "tests", "scripts", "advanced", "loginserver", "weapon-ServerListScreen.gs2")];
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "loginserver", "weapon-Serverlist_Patches.gs2")];
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "loginserver", "weapon-Staff_GUIExplorer.gs2")];
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "loginserver", "weapon-StartConnectMessage.gs2")];

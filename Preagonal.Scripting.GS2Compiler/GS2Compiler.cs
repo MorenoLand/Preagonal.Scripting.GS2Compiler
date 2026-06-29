@@ -958,6 +958,11 @@ internal static class GS2Compiler
 					_bytecode.Emit(Op.Assign);
 					break;
 				case BinaryExpr { Op: "&&" or "||" } logical:
+					if (!controlLogical && !negatedLogical && !leftNegatedControlAnd && HasNestedLogical(logical, logical.Op))
+					{
+						EmitLogicalChain(logical, logicalInline, suppressedLogicalPatchOffset);
+						break;
+					}
 					List<int>? localSuccessPatches = null;
 					List<int>? localFailPatches = null;
 					var localSuccessStart = 0;
@@ -973,7 +978,8 @@ internal static class GS2Compiler
 						localFailStart = localFailPatches.Count;
 					}
 					var passNegatedControlAnd = controlLogical && logical.Left is UnaryExpr { Op: "!", Expression: BinaryExpr { Op: "&&" } };
-					Emit(logical.Left, false, false, logical.Left is BinaryExpr { Op: "&&" or "||" } ? (controlLogical || negatedLogical) && logical.Op == "||" ? 6 : 1 : 0, controlLogical, negatedLogical, true, passNegatedControlAnd);
+					var leftPatchOffset = logical.Left is BinaryExpr { Op: "&&" or "||" } ? (controlLogical || negatedLogical) && logical.Op == "||" ? 6 : logical.Op == "&&" && logical.Left is BinaryExpr { Op: "||" } ? 0 : 1 : 0;
+					Emit(logical.Left, false, false, leftPatchOffset, controlLogical, negatedLogical, true, passNegatedControlAnd);
 					if (!IsBooleanExpr(logical.Left)) _bytecode.Emit(Op.ConvToFloat);
 					if (localSuccessPatches != null)
 					{
@@ -1039,7 +1045,7 @@ internal static class GS2Compiler
 					if (binary.Op == "&" && binary.Left is not NumberExpr) _bytecode.Emit(Op.ConvToFloat);
 					Emit(binary.Right);
 					if ((IsNumericOp(binary.Op) || IsComparisonOp(binary.Op)) && NeedsNumericConversion(binary.Right)) _bytecode.Emit(Op.ConvToFloat);
-					if (binary.Op == "@" && binary.Right is not StringExpr) _bytecode.Emit(Op.ConvToString);
+					if (binary.Op == "@" && binary.Right is not StringExpr and not TernaryExpr { WhenTrue: StringExpr, WhenFalse: StringExpr }) _bytecode.Emit(Op.ConvToString);
 					_bytecode.Emit(BinaryOpcode(binary.Op));
 					break;
 				case MemberExpr member:
@@ -1407,7 +1413,7 @@ internal static class GS2Compiler
 					if (call.Name is "add" or "delete")
 					{
 						Emit(call.Object);
-						if (NeedsObjectConversion(call.Object)) _bytecode.Emit(Op.ConvToObject);
+						if (NeedsObjectConversion(call.Object) || call.Object is ArrayIndexExpr) _bytecode.Emit(Op.ConvToObject);
 						foreach (var arg in call.Args) Emit(arg);
 						_bytecode.Emit(call.Name == "add" ? Op.ObjAddString : Op.ObjDeleteString);
 						break;
@@ -1501,6 +1507,37 @@ internal static class GS2Compiler
 				_bytecode.PatchShort(successLoc, _bytecode.OpIndex);
 			}
 		}
+
+		private void EmitLogicalChain(BinaryExpr logical, bool logicalInline, int suppressedLogicalPatchOffset)
+		{
+			List<Expr> terms = [];
+			FlattenLogical(logical, logical.Op, terms);
+			List<int> patches = [];
+			for (var i = 0; i < terms.Count - 1; ++i)
+			{
+				Emit(terms[i], false, false, 0);
+				if (!IsBooleanExpr(terms[i])) _bytecode.Emit(Op.ConvToFloat);
+				_bytecode.Emit(logical.Op == "&&" ? Op.And : Op.Or);
+				patches.Add(_bytecode.EmitNumberOperandPlaceholder());
+			}
+			Emit(terms[^1], false, false, 0);
+			if (!IsBooleanExpr(terms[^1])) _bytecode.Emit(Op.ConvToFloat);
+			if (logicalInline) _bytecode.Emit(Op.InlineConditional);
+			var target = _bytecode.OpIndex - (logicalInline ? 1 : 0) + (!logicalInline ? suppressedLogicalPatchOffset : 0);
+			foreach (var patch in patches) _bytecode.PatchShort(patch, target);
+		}
+
+		private static void FlattenLogical(Expr expr, string op, List<Expr> terms)
+		{
+			if (expr is BinaryExpr { Op: var currentOp, Left: var left, Right: var right } && currentOp == op)
+			{
+				FlattenLogical(left, op, terms);
+				FlattenLogical(right, op, terms);
+			}
+			else terms.Add(expr);
+		}
+
+		private static bool HasNestedLogical(BinaryExpr expr, string op) => expr.Left is BinaryExpr { Op: var leftOp } && leftOp == op || expr.Right is BinaryExpr { Op: var rightOp } && rightOp == op;
 
 		private void EmitMultiArrayIndex(MultiArrayIndexExpr expr, bool assignmentTarget)
 		{
@@ -1624,6 +1661,7 @@ internal static class GS2Compiler
 			ChainedCallExpr => true,
 			MethodCallExpr => true,
 			InExpr inExpr => ContainsCall(inExpr.Expression) || ContainsCall(inExpr.Lower) || (inExpr.Upper != null && ContainsCall(inExpr.Upper)),
+			TernaryExpr ternary => ContainsCall(ternary.Condition) || ContainsCall(ternary.WhenTrue) || ContainsCall(ternary.WhenFalse),
 			BinaryExpr binary => ContainsCall(binary.Left) || ContainsCall(binary.Right),
 			UnaryExpr unary => ContainsCall(unary.Expression),
 			StringCastExpr cast => ContainsCall(cast.Expression),
