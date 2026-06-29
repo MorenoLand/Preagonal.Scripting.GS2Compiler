@@ -406,6 +406,25 @@ public class InterfaceTests
 	}
 
 	[Fact]
+	public void Given_sleep_call_When_compiling_Then_direct_opcode_is_emitted()
+	{
+		const string scriptText =
+			"""
+						function onCreated() {
+						  sleep(0.05);
+						}
+			""";
+
+		var result = Interface.CompileCode(scriptText, withHeader: false);
+		var strings = ReadStringTable(result.ByteCode);
+		var code = ReadBytecodeSegment(result.ByteCode);
+
+		Assert.True(result.Success);
+		Assert.Contains((byte)8, code);
+		Assert.DoesNotContain("sleep", strings);
+	}
+
+	[Fact]
 	public void Given_waitfor_call_When_compiling_Then_direct_opcode_is_emitted()
 	{
 		const string scriptText =
