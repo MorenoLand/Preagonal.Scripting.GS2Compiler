@@ -1,6 +1,6 @@
 # GS2 parity progress
 
-Current advanced fixture score: 119 / 155 byte-for-byte hashes, 121 / 155 byte sizes.
+Current advanced fixture score: 121 / 155 byte-for-byte hashes, 123 / 155 byte sizes.
 
 Locked direct builtins:
 - `setarray(object, size)` emits `OP_SETARRAY` (`39`) directly and does not add `setarray` to the string table.
@@ -11,6 +11,7 @@ Locked advanced parity fixtures:
 - `tests/scripts/advanced/g2k1/weaponBread Stack.gs2`
 - `tests/scripts/advanced/g2k1/weaponCandies.gs2`
 - `tests/scripts/advanced/g2k1/weaponCatch Net.gs2`
+- `tests/scripts/advanced/g2k1/weapon-Day-Night.gs2`
 - `tests/scripts/advanced/g2k1/weaponDiamond Axe.gs2`
 - `tests/scripts/advanced/g2k1/weaponDiving.gs2`
 - `tests/scripts/advanced/g2k1/weaponGold Axe.gs2`
@@ -31,6 +32,7 @@ Locked advanced parity fixtures:
 - `tests/scripts/advanced/g2k1/weapon-Systems_Main.gs2`
 - `tests/scripts/advanced/g2k1/weaponTestGS2.gs2`
 - `tests/scripts/advanced/g2k1/weaponTorch.gs2`
+- `tests/scripts/advanced/g2k1/weaponTrading Item.gs2`
 - `tests/scripts/advanced/g2k1/weaponViolin.gs2`
 - `tests/scripts/advanced/g2k1/weaponWater Can.gs2`
 - `tests/scripts/advanced/g2k1/weaponWooden Hammer.gs2`

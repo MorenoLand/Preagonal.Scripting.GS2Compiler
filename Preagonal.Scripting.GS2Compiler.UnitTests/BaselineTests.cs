@@ -36,6 +36,7 @@ public class BaselineTests
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "g2k1", "weaponViolin.gs2")];
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "g2k1", "weaponBasket.gs2")];
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "g2k1", "weaponCandies.gs2")];
+		yield return [Path.Combine(root, "tests", "scripts", "advanced", "g2k1", "weapon-Day-Night.gs2")];
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "g2k1", "weaponDiamond Axe.gs2")];
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "g2k1", "weaponDiving.gs2")];
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "g2k1", "weaponGold Axe.gs2")];
@@ -46,6 +47,7 @@ public class BaselineTests
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "g2k1", "weaponSkip.gs2")];
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "g2k1", "weaponSpin.gs2")];
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "g2k1", "weapon-Systems_Main.gs2")];
+		yield return [Path.Combine(root, "tests", "scripts", "advanced", "g2k1", "weaponTrading Item.gs2")];
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "g2k1", "weaponWater Can.gs2")];
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "g2k1", "weaponWooden Hammer.gs2")];
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "graalx", "weaponItems_Chemicals.gs2")];

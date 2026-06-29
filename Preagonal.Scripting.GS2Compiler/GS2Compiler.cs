@@ -1439,7 +1439,8 @@ internal static class GS2Compiler
 
 		private static readonly HashSet<string> NonReturningBuiltInCalls = new(StringComparer.Ordinal)
 		{
-			"sleep"
+			"sleep",
+			"setarray"
 		};
 
 		private static readonly HashSet<string> NonReturningMethodCalls = new(StringComparer.Ordinal)
