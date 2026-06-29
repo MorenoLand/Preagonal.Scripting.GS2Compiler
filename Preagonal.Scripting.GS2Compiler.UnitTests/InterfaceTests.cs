@@ -513,6 +513,23 @@ public class InterfaceTests
 	}
 
 	[Fact]
+	public void Given_index_method_on_array_index_When_compiling_Then_receiver_is_converted()
+	{
+		const string scriptText =
+			"""
+						function onActionClientSide(action, args) {
+						  temp.pos = args[0].index("-");
+						}
+			""";
+
+		var result = Interface.CompileCode(scriptText, withHeader: false);
+		var code = ReadBytecodeSegment(result.ByteCode);
+
+		Assert.True(result.Success);
+		Assert.True(Contains([131, 36, 21, 240, 3, 82], code));
+	}
+
+	[Fact]
 	public void Given_length_method_call_When_compiling_Then_object_length_opcode_is_emitted()
 	{
 		const string scriptText =
