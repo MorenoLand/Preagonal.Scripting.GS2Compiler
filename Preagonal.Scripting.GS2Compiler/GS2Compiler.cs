@@ -1192,7 +1192,7 @@ internal static class GS2Compiler
 					if (call.Name == "size" && call.Args.Count == 0)
 					{
 						Emit(call.Object);
-						if (NeedsObjectConversion(call.Object)) _bytecode.Emit(Op.ConvToObject);
+						if (NeedsObjectConversion(call.Object) || call.Object is ArrayIndexExpr) _bytecode.Emit(Op.ConvToObject);
 						_bytecode.Emit(Op.ObjSize);
 						break;
 					}

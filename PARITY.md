@@ -1,6 +1,6 @@
 # GS2 parity progress
 
-Current advanced fixture score: 112 / 155 byte-for-byte hashes, 113 / 155 byte sizes.
+Current advanced fixture score: 114 / 155 byte-for-byte hashes, 115 / 155 byte sizes.
 
 Locked direct builtins:
 - `setarray(object, size)` emits `OP_SETARRAY` (`39`) directly and does not add `setarray` to the string table.
@@ -41,6 +41,7 @@ Locked advanced parity fixtures:
 - `tests/scripts/advanced/graalx/weapon+Melee.gs2`
 - `tests/scripts/advanced/graalx/weapon+Presents.gs2`
 - `tests/scripts/advanced/graalx/weapon+Seeds.gs2`
+- `tests/scripts/advanced/graalx/weapon%045CarSystem.gs2`
 - `tests/scripts/advanced/graalx/weaponBackups_Radio.gs2`
 - `tests/scripts/advanced/graalx/weapon-BizSystem.gs2`
 - `tests/scripts/advanced/graalx/weaponBrasas.gs2`
@@ -53,6 +54,7 @@ Locked advanced parity fixtures:
 - `tests/scripts/advanced/graalx/weapon-FoodSys.gs2`
 - `tests/scripts/advanced/graalx/weaponFrankie_Test.gs2`
 - `tests/scripts/advanced/graalx/weapon-Functions.gs2`
+- `tests/scripts/advanced/graalx/weapon-Gang Control.gs2`
 - `tests/scripts/advanced/graalx/weapon-GraalDB.gs2`
 - `tests/scripts/advanced/graalx/weapon-Gravity.gs2`
 - `tests/scripts/advanced/graalx/weapon-Gui.gs2`
