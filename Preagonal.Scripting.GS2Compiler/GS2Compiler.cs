@@ -344,8 +344,20 @@ internal static class GS2Compiler
 
 		private Expr ParseComparison()
 		{
-			var expr = ParseTerm();
+			var expr = ParseConcat();
 			while (_current.Type is TokenType.Less or TokenType.LessEqual or TokenType.Greater or TokenType.GreaterEqual)
+			{
+				var op = _current.Text;
+				Advance();
+				expr = new BinaryExpr(expr, op, ParseConcat());
+			}
+			return expr;
+		}
+
+		private Expr ParseConcat()
+		{
+			var expr = ParseTerm();
+			while (_current.Type is TokenType.At)
 			{
 				var op = _current.Text;
 				Advance();
@@ -357,7 +369,7 @@ internal static class GS2Compiler
 		private Expr ParseTerm()
 		{
 			var expr = ParseFactor();
-			while (_current.Type is TokenType.Plus or TokenType.Minus or TokenType.At)
+			while (_current.Type is TokenType.Plus or TokenType.Minus)
 			{
 				var op = _current.Text;
 				Advance();
