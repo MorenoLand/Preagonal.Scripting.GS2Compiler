@@ -379,8 +379,7 @@ internal static class GS2Compiler
 				{
 					if (Match(TokenType.LeftParen))
 					{
-						Match(TokenType.At);
-						var name = ParseExpression();
+						var name = Match(TokenType.At) ? new StringCastExpr(ParseExpression()) : ParseExpression();
 						Expect(TokenType.RightParen);
 						expr = new DynamicMemberExpr(expr, name);
 						continue;
@@ -423,7 +422,7 @@ internal static class GS2Compiler
 		{
 			if (Match(TokenType.Increment)) return new UnaryExpr("++", ParseUnary());
 			if (Match(TokenType.Decrement)) return new UnaryExpr("--", ParseUnary());
-			if (Match(TokenType.At)) return new DynamicVarExpr(ParseUnary());
+			if (Match(TokenType.At)) return new StringCastExpr(ParseUnary());
 			if (Match(TokenType.Minus)) return new UnaryExpr("-", ParseUnary());
 			if (Match(TokenType.Not)) return new UnaryExpr("!", ParseUnary());
 			if (Match(TokenType.BitInvert)) return new UnaryExpr("~", ParseUnary());
@@ -498,7 +497,7 @@ internal static class GS2Compiler
 				{
 					var name = ParseExpression();
 					Expect(TokenType.RightParen);
-					return new DynamicVarExpr(name);
+					return new StringCastExpr(name);
 				}
 				var expr = ParseExpression();
 				Expect(TokenType.RightParen);
@@ -988,9 +987,23 @@ internal static class GS2Compiler
 				case DynamicMemberExpr member:
 					Emit(member.Object);
 					if (NeedsObjectConversion(member.Object)) _bytecode.Emit(Op.ConvToObject);
-					Emit(member.Name);
-					if (member.Name is not StringExpr) _bytecode.Emit(Op.ConvToString);
+					if (member.Name is StringCastExpr nameCast)
+					{
+						Emit(nameCast.Expression);
+						if (NeedsNumericConversion(nameCast.Expression)) _bytecode.Emit(Op.ConvToFloat);
+						_bytecode.Emit(Op.Add);
+					}
+					else
+					{
+						Emit(member.Name);
+						if (NeedsStringConversion(member.Name)) _bytecode.Emit(Op.ConvToString);
+					}
 					_bytecode.Emit(Op.MemberAccess);
+					break;
+				case StringCastExpr cast:
+					Emit(cast.Expression);
+					_bytecode.Emit(Op.ConvToString);
+					if (ExpressionTypeOf(cast.Expression) == ExprType.Array) _bytecode.Emit(Op.MemberAccess);
 					break;
 				case ArrayIndexExpr index:
 					EmitArrayIndex(index, false);
@@ -1451,6 +1464,7 @@ internal static class GS2Compiler
 			BinaryExpr { Op: "+" or "-" or "*" or "/" or "%" or "^" or "==" or "!=" or "<" or "<=" or "=<" or ">" or ">=" or "=>" or "&&" or "||" or "&" or "|" or "xor" or "<<" or ">>" } => ExprType.Number,
 			BinaryExpr { Op: "+=" or "-=" or "*=" or "/=" or "%=" or "^=" or "<<=" or ">>=" or "|=" or "&=" } => ExprType.Number,
 			BinaryExpr { Op: "@" or " " or "\n" or "\t" } or StringExpr or CastExpr { Type: "_" } => ExprType.String,
+			StringCastExpr => ExprType.String,
 			BinaryExpr { Op: "@=" } => ExprType.String,
 			BinaryExpr { Op: "=", Right: var right } => ExpressionTypeOf(right),
 			TernaryExpr { WhenTrue: var trueExpr, WhenFalse: var falseExpr } when ExpressionTypeOf(trueExpr) == ExpressionTypeOf(falseExpr) => ExpressionTypeOf(trueExpr),
@@ -1490,6 +1504,7 @@ internal static class GS2Compiler
 			InExpr inExpr => ContainsCall(inExpr.Expression) || ContainsCall(inExpr.Lower) || (inExpr.Upper != null && ContainsCall(inExpr.Upper)),
 			BinaryExpr binary => ContainsCall(binary.Left) || ContainsCall(binary.Right),
 			UnaryExpr unary => ContainsCall(unary.Expression),
+			StringCastExpr cast => ContainsCall(cast.Expression),
 			CastExpr cast => ContainsCall(cast.Expression),
 			MemberExpr member => ContainsCall(member.Object),
 			DynamicMemberExpr member => ContainsCall(member.Object) || ContainsCall(member.Name),
@@ -1877,6 +1892,7 @@ internal static class GS2Compiler
 	private sealed record InExpr(Expr Expression, Expr Lower, Expr? Upper) : Expr;
 	private sealed record TernaryExpr(Expr Condition, Expr WhenTrue, Expr WhenFalse) : Expr;
 	private sealed record UnaryExpr(string Op, Expr Expression) : Expr;
+	private sealed record StringCastExpr(Expr Expression) : Expr;
 	private sealed record CastExpr(string Type, Expr Expression) : Expr;
 	private sealed record MemberExpr(Expr Object, string Name) : Expr;
 	private sealed record DynamicMemberExpr(Expr Object, Expr Name) : Expr;
