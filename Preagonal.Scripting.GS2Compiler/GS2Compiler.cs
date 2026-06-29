@@ -1108,6 +1108,19 @@ internal static class GS2Compiler
 					}
 					_bytecode.Emit(Op.Sleep);
 					break;
+				case CallExpr { Name: "setarray" } call:
+					if (call.Args.Count > 0)
+					{
+						Emit(call.Args[0]);
+						if (NeedsObjectConversion(call.Args[0])) _bytecode.Emit(Op.ConvToObject);
+					}
+					if (call.Args.Count > 1)
+					{
+						Emit(call.Args[1]);
+						if (!IsNumberExpr(call.Args[1])) _bytecode.Emit(Op.ConvToFloat);
+					}
+					_bytecode.Emit(Op.SetArray);
+					break;
 				case CallExpr { Name: "makevar" } call:
 					for (var i = call.Args.Count - 1; i >= 0; --i)
 					{
@@ -1886,6 +1899,7 @@ internal static class GS2Compiler
 		ConvToObject = 36,
 		ArrayEnd = 37,
 		ArrayNew = 38,
+		SetArray = 39,
 		InlineNew = 40,
 		MakeVar = 41,
 		NewObject = 42,
