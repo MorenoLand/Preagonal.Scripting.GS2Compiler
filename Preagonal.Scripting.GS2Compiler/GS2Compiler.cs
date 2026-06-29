@@ -575,6 +575,7 @@ internal static class GS2Compiler
 		private readonly Stack<List<int>> _continuePatches = new();
 		private readonly Stack<List<int>> _conditionFailPatches = new();
 		private readonly Stack<List<int>> _conditionSuccessPatches = new();
+		private readonly Dictionary<string, string> _negativeFloatText = new(StringComparer.Ordinal);
 		private int _newObjectCount;
 
 		public Emitter(BytecodeWriter bytecode, Dictionary<string, Expr> constants, Dictionary<string, Dictionary<string, int>> enums)
@@ -1072,7 +1073,7 @@ internal static class GS2Compiler
 					break;
 				case UnaryExpr { Op: "-", Expression: NumberExpr number }:
 					_bytecode.Emit(Op.TypeNumber);
-					if (number.Text.Contains('.', StringComparison.Ordinal)) _bytecode.EmitDoubleNumber("-" + number.Text);
+					if (number.Text.Contains('.', StringComparison.Ordinal)) _bytecode.EmitDoubleNumber(NextNegativeFloatText(number.Text));
 					else _bytecode.EmitDynamicNumber(-int.Parse(number.Text, CultureInfo.InvariantCulture));
 					break;
 				case UnaryExpr { Op: "-", Expression: var unaryValue }:
@@ -1457,6 +1458,14 @@ internal static class GS2Compiler
 
 		private static bool NeedsNumericConversion(Expr expr) => ExpressionTypeOf(expr) != ExprType.Number;
 		private static bool NeedsStringConversion(Expr expr) => ExpressionTypeOf(expr) != ExprType.String;
+
+		private string NextNegativeFloatText(string text)
+		{
+			var previous = _negativeFloatText.TryGetValue(text, out var value) ? value : text;
+			var next = "-" + previous;
+			_negativeFloatText[text] = next;
+			return next;
+		}
 
 		private static bool NeedsObjectConversion(Expr expr) => expr switch
 		{
