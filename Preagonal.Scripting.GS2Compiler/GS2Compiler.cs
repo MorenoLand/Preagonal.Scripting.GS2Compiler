@@ -1345,7 +1345,7 @@ internal static class GS2Compiler
 					_bytecode.Emit(Op.TypeArray);
 					for (var i = call.Args.Count - 1; i >= 0; --i) Emit(call.Args[i]);
 					Emit(call.Object);
-					if (NeedsObjectConversion(call.Object)) _bytecode.Emit(Op.ConvToObject);
+					if (NeedsObjectConversion(call.Object) || call.Object is ArrayIndexExpr) _bytecode.Emit(Op.ConvToObject);
 					_bytecode.Emit(Op.TypeVar);
 					_bytecode.EmitDynamicStringIndex(_bytecode.GetString(call.Name));
 					_bytecode.Emit(Op.MemberAccess);
