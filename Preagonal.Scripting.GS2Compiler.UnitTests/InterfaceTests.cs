@@ -270,6 +270,25 @@ public class InterfaceTests
 	}
 
 	[Fact]
+	public void Given_makevar_call_When_compiling_Then_direct_opcode_is_emitted()
+	{
+		const string scriptText =
+			"""
+						function onCreated() {
+						  temp.obj = makevar("this.value");
+						}
+			""";
+
+		var result = Interface.CompileCode(scriptText, withHeader: false);
+		var strings = ReadStringTable(result.ByteCode);
+		var code = ReadBytecodeSegment(result.ByteCode);
+
+		Assert.True(result.Success);
+		Assert.Contains((byte)41, code);
+		Assert.DoesNotContain("makevar", strings);
+	}
+
+	[Fact]
 	public void Given_size_method_call_When_compiling_Then_object_size_opcode_is_emitted()
 	{
 		const string scriptText =

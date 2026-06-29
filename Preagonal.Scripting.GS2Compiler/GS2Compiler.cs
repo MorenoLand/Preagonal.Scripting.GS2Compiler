@@ -1083,6 +1083,14 @@ internal static class GS2Compiler
 					}
 					_bytecode.Emit(Op.Sleep);
 					break;
+				case CallExpr { Name: "makevar" } call:
+					for (var i = call.Args.Count - 1; i >= 0; --i)
+					{
+						Emit(call.Args[i]);
+						if (NeedsStringConversion(call.Args[i])) _bytecode.Emit(Op.ConvToString);
+					}
+					_bytecode.Emit(Op.MakeVar);
+					break;
 				case CallExpr call:
 					_bytecode.Emit(Op.TypeArray);
 					for (var i = call.Args.Count - 1; i >= 0; --i) Emit(call.Args[i]);
@@ -1827,6 +1835,7 @@ internal static class GS2Compiler
 		ArrayEnd = 37,
 		ArrayNew = 38,
 		InlineNew = 40,
+		MakeVar = 41,
 		NewObject = 42,
 		Assign = 50,
 		FuncParamsEnd = 51,
