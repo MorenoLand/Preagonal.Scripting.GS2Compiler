@@ -299,6 +299,7 @@ public class InterfaceTests
 		var code = ReadBytecodeSegment(result.ByteCode);
 
 		Assert.True(result.Success);
+		Assert.Contains((byte)34, code);
 		Assert.Contains((byte)41, code);
 		Assert.DoesNotContain("makevar", strings);
 	}
@@ -519,7 +520,7 @@ public class InterfaceTests
 		const string scriptText =
 			"""
 						function onCreated() {
-						  temp.name = player.account.trim();
+						  temp.name = " player ".trim();
 						}
 			""";
 
@@ -528,6 +529,7 @@ public class InterfaceTests
 		var code = ReadBytecodeSegment(result.ByteCode);
 
 		Assert.True(result.Success);
+		Assert.Contains((byte)34, code);
 		Assert.Contains((byte)110, code);
 		Assert.DoesNotContain("trim", strings);
 	}
