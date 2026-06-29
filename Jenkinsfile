@@ -116,7 +116,7 @@ def buildStepDocker() {
 					)
 
 					withCredentials([string(credentialsId: 'PREAGONAL_GS2COMPILER_CODECOV_TOKEN', variable: 'CODECOV_TOKEN')]) {
-					    sh("curl -s https://codecov.io/bash > codecov && chmod +x codecov && ./codecov -f \"Testing/unit_tests.xml\" -t ${env.CODECOV_TOKEN} && ./codecov -f \"Preagonal.Scripting.GS2Compiler.UnitTests/coverage.opencover.xml\" -t ${env.CODECOV_TOKEN}")
+					    sh('curl -s https://codecov.io/bash > codecov && chmod +x codecov && ./codecov -f Preagonal.Scripting.GS2Compiler.UnitTests/coverage*.opencover.xml -t "$CODECOV_TOKEN"')
 					}
 
 					stage("Xunit") {
