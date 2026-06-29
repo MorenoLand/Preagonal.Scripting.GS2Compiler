@@ -1,6 +1,6 @@
 # GS2 parity progress
 
-Current advanced fixture score: 105 / 155 byte-for-byte hashes, 109 / 155 byte sizes.
+Current advanced fixture score: 107 / 155 byte-for-byte hashes, 110 / 155 byte sizes.
 
 Locked direct builtins:
 - `setarray(object, size)` emits `OP_SETARRAY` (`39`) directly and does not add `setarray` to the string table.
@@ -90,6 +90,7 @@ Locked advanced parity fixtures:
 - `tests/scripts/advanced/graalx/weaponSystems_ArchetypeEditor.gs2`
 - `tests/scripts/advanced/graalx/weaponSystems_B2.gs2`
 - `tests/scripts/advanced/graalx/weaponSystems_BackupSys.gs2`
+- `tests/scripts/advanced/graalx/weaponSystems_FoodSys.gs2`
 - `tests/scripts/advanced/graalx/weaponSystems_IRC.gs2`
 - `tests/scripts/advanced/graalx/weaponSystems_Mail.gs2`
 - `tests/scripts/advanced/graalx/weaponSystems_Party.gs2`
@@ -101,6 +102,7 @@ Locked advanced parity fixtures:
 - `tests/scripts/advanced/graalx/weaponVulcan.gs2`
 - `tests/scripts/advanced/graalx/weaponWeapons_Grenade.gs2`
 - `tests/scripts/advanced/graalx/weaponWeapons_Hand Cuffs.gs2`
+- `tests/scripts/advanced/graalx/weapon-Weather.gs2`
 - `tests/scripts/advanced/loginserver/weapon-Adventure.gs2`
 - `tests/scripts/advanced/loginserver/weapon-IRC_Login4.gs2`
 - `tests/scripts/advanced/loginserver/weapon-Rescripted_-F2LogWindow.gs2`
