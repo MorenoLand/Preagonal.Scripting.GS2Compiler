@@ -631,6 +631,7 @@ internal static class GS2Compiler
 				Emit(exprStatement.Expression);
 				if (!discardCallReturn) { }
 				else if (exprStatement.Expression is CallExpr call && NonReturningBuiltInCalls.Contains(call.Name)) { }
+				else if (exprStatement.Expression is MethodCallExpr methodCall && NonReturningMethodCalls.Contains(methodCall.Name)) { }
 				else if (exprStatement.Expression is CallExpr or MethodCallExpr) _bytecode.Emit(Op.IndexDec);
 			}
 			else if (statement is ReturnStmt returnStatement)
@@ -1156,6 +1157,34 @@ internal static class GS2Compiler
 						_bytecode.Emit(Op.ObjTokenize);
 						break;
 					}
+					if (call.Name == "clear" && call.Args.Count == 0)
+					{
+						Emit(call.Object);
+						if (NeedsObjectConversion(call.Object)) _bytecode.Emit(Op.ConvToObject);
+						_bytecode.Emit(Op.ObjClear);
+						break;
+					}
+					if (call.Name is "add" or "delete")
+					{
+						Emit(call.Object);
+						if (NeedsObjectConversion(call.Object)) _bytecode.Emit(Op.ConvToObject);
+						foreach (var arg in call.Args) Emit(arg);
+						_bytecode.Emit(call.Name == "add" ? Op.ObjAddString : Op.ObjDeleteString);
+						break;
+					}
+					if (call.Name is "insert" or "remove" or "replace")
+					{
+						Emit(call.Object);
+						if (NeedsObjectConversion(call.Object)) _bytecode.Emit(Op.ConvToObject);
+						for (var i = call.Args.Count - 1; i >= 0; --i) Emit(call.Args[i]);
+						_bytecode.Emit(call.Name switch
+						{
+							"insert" => Op.ObjInsertString,
+							"remove" => Op.ObjRemoveString,
+							_ => Op.ObjReplaceString
+						});
+						break;
+					}
 					_bytecode.Emit(Op.TypeArray);
 					for (var i = call.Args.Count - 1; i >= 0; --i) Emit(call.Args[i]);
 					Emit(call.Object);
@@ -1245,6 +1274,16 @@ internal static class GS2Compiler
 		private static readonly HashSet<string> NonReturningBuiltInCalls = new(StringComparer.Ordinal)
 		{
 			"sleep"
+		};
+
+		private static readonly HashSet<string> NonReturningMethodCalls = new(StringComparer.Ordinal)
+		{
+			"clear",
+			"add",
+			"delete",
+			"insert",
+			"remove",
+			"replace"
 		};
 
 		private static bool IsNumericOp(string op) => op is "+" or "-" or "*" or "/" or "%" or "^";
@@ -1795,6 +1834,12 @@ internal static class GS2Compiler
 		ArrayAssign = 132,
 		ArrayMultiDim = 133,
 		ArrayMultiDimAssign = 134,
+		ObjAddString = 136,
+		ObjDeleteString = 137,
+		ObjRemoveString = 138,
+		ObjReplaceString = 139,
+		ObjInsertString = 140,
+		ObjClear = 141,
 		ArrayNewMultiDim = 142,
 		With = 150,
 		WithEnd = 151,

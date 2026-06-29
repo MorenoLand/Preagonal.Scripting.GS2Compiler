@@ -407,6 +407,40 @@ public class InterfaceTests
 		Assert.DoesNotContain("tokenize", strings);
 	}
 
+	[Fact]
+	public void Given_object_mutation_method_calls_When_compiling_Then_direct_opcodes_are_emitted()
+	{
+		const string scriptText =
+			"""
+						function onCreated() {
+						  this.items.clear();
+						  this.items.add("a");
+						  this.items.delete(0);
+						  this.items.insert(0, "b");
+						  this.items.remove("b");
+						  this.items.replace("a", "c");
+						}
+			""";
+
+		var result = Interface.CompileCode(scriptText, withHeader: false);
+		var strings = ReadStringTable(result.ByteCode);
+		var code = ReadBytecodeSegment(result.ByteCode);
+
+		Assert.True(result.Success);
+		Assert.Contains((byte)136, code);
+		Assert.Contains((byte)137, code);
+		Assert.Contains((byte)138, code);
+		Assert.Contains((byte)139, code);
+		Assert.Contains((byte)140, code);
+		Assert.Contains((byte)141, code);
+		Assert.DoesNotContain("clear", strings);
+		Assert.DoesNotContain("add", strings);
+		Assert.DoesNotContain("delete", strings);
+		Assert.DoesNotContain("insert", strings);
+		Assert.DoesNotContain("remove", strings);
+		Assert.DoesNotContain("replace", strings);
+	}
+
 	private static List<string> ReadFunctionNames(byte[] bytecode)
 	{
 		var offset = 0;
