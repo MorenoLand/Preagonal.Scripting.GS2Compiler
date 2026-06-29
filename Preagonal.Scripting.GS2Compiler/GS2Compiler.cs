@@ -493,12 +493,6 @@ internal static class GS2Compiler
 			}
 			if (Match(TokenType.LeftParen))
 			{
-				if (Match(TokenType.At))
-				{
-					var name = ParseExpression();
-					Expect(TokenType.RightParen);
-					return new StringCastExpr(name);
-				}
 				var expr = ParseExpression();
 				Expect(TokenType.RightParen);
 				return expr;
