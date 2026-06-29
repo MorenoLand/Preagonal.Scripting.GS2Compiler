@@ -942,6 +942,14 @@ internal static class GS2Compiler
 						_bytecode.Emit(Op.InObj);
 					}
 					break;
+				case BinaryExpr { Op: "*", Left: UnaryExpr { Op: "-", Expression: var negatedLeft }, Right: var right }:
+					Emit(negatedLeft);
+					if (NeedsNumericConversion(negatedLeft)) _bytecode.Emit(Op.ConvToFloat);
+					Emit(right);
+					if (NeedsNumericConversion(right)) _bytecode.Emit(Op.ConvToFloat);
+					_bytecode.Emit(Op.Mul);
+					_bytecode.Emit(Op.UnarySub);
+					break;
 				case BinaryExpr binary:
 					Emit(binary.Left);
 					if (binary.Op == "@" && NeedsStringConversion(binary.Left)) _bytecode.Emit(Op.ConvToString);
