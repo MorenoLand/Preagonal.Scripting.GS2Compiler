@@ -150,8 +150,9 @@ internal static class GS2Compiler
 				var condition = ParseExpression();
 				Expect(TokenType.RightParen);
 				var thenBody = ParseBody();
-				var elseBody = Match(TokenType.Else) ? ParseBody() : Match(TokenType.ElseIf) ? [ParseElseIfStatement()] : [];
-				return new IfStmt(condition, thenBody, elseBody);
+				var hasElse = false;
+				var elseBody = Match(TokenType.Else) ? HasElse(ParseBody(), out hasElse) : Match(TokenType.ElseIf) ? HasElse([ParseElseIfStatement()], out hasElse) : [];
+				return new IfStmt(condition, thenBody, elseBody, hasElse);
 			}
 			if (Match(TokenType.For)) return ParseForStatement();
 			if (Match(TokenType.While))
@@ -193,8 +194,15 @@ internal static class GS2Compiler
 			var condition = ParseExpression();
 			Expect(TokenType.RightParen);
 			var thenBody = ParseBody();
-			var elseBody = Match(TokenType.Else) ? ParseBody() : Match(TokenType.ElseIf) ? [ParseElseIfStatement()] : [];
-			return new IfStmt(condition, thenBody, elseBody);
+			var hasElse = false;
+			var elseBody = Match(TokenType.Else) ? HasElse(ParseBody(), out hasElse) : Match(TokenType.ElseIf) ? HasElse([ParseElseIfStatement()], out hasElse) : [];
+			return new IfStmt(condition, thenBody, elseBody, hasElse);
+		}
+
+		private static List<Stmt> HasElse(List<Stmt> body, out bool hasElse)
+		{
+			hasElse = true;
+			return body;
 		}
 
 		private Stmt ParseForStatement()
@@ -671,10 +679,10 @@ internal static class GS2Compiler
 			_bytecode.Emit(Op.If);
 			var failLoc = _bytecode.EmitNumberOperandPlaceholder();
 			foreach (var stmt in statement.ThenBody) EmitStatement(stmt);
-			var failTarget = _bytecode.OpIndex + (statement.ElseBody.Count > 0 ? 1 : 0);
+			var failTarget = _bytecode.OpIndex + (statement.HasElse ? 1 : 0);
 			_bytecode.PatchShort(failLoc, failTarget);
 			foreach (var patch in conditionFailPatches) _bytecode.PatchShort(patch, failTarget);
-			if (statement.ElseBody.Count > 0)
+			if (statement.HasElse)
 			{
 				_bytecode.Emit(Op.SetIndex);
 				var exitLoc = _bytecode.EmitNumberOperandPlaceholder();
@@ -1939,7 +1947,7 @@ internal static class GS2Compiler
 	private sealed record InlineStmt(Stmt Statement) : Stmt;
 	private sealed record BlockStmt(List<Stmt> Body) : Stmt;
 	private sealed record ReturnStmt(Expr Expression) : Stmt;
-	private sealed record IfStmt(Expr Condition, List<Stmt> ThenBody, List<Stmt> ElseBody) : Stmt;
+	private sealed record IfStmt(Expr Condition, List<Stmt> ThenBody, List<Stmt> ElseBody, bool HasElse) : Stmt;
 	private sealed record ForStmt(Expr? Init, Expr Condition, Expr? Post, List<Stmt> Body) : Stmt;
 	private sealed record ForEachStmt(Expr Name, Expr Source, List<Stmt> Body) : Stmt;
 	private sealed record WhileStmt(Expr Condition, List<Stmt> Body) : Stmt;
