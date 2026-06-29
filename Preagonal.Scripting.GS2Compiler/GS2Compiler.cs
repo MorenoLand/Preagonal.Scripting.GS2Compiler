@@ -1112,7 +1112,7 @@ internal static class GS2Compiler
 					for (var i = call.Args.Count - 1; i >= 0; --i)
 					{
 						Emit(call.Args[i]);
-						if (NeedsStringConversion(call.Args[i])) _bytecode.Emit(Op.ConvToString);
+						_bytecode.Emit(Op.ConvToString);
 					}
 					_bytecode.Emit(Op.MakeVar);
 					break;
