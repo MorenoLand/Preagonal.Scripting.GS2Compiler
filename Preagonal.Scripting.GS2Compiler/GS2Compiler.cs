@@ -1603,7 +1603,7 @@ internal static class GS2Compiler
 			ReturnStmt expr => ContainsCall(expr.Expression),
 			IfStmt stmt => stmt.ThenBody.Exists(ContainsCall) || stmt.ElseBody.Exists(ContainsCall) || ContainsCall(stmt.Condition),
 			ForStmt stmt => (stmt.Init != null && ContainsCall(stmt.Init)) || ContainsCall(stmt.Condition) || (stmt.Post != null && ContainsCall(stmt.Post)) || stmt.Body.Exists(ContainsCall),
-			ForEachStmt stmt => ContainsCall(stmt.Name) || ContainsCall(stmt.Source) || stmt.Body.Exists(ContainsCall),
+			ForEachStmt stmt => ContainsCall(stmt.Name) || ContainsCall(stmt.Source) || stmt.Body.Exists(ContainsCall) || stmt.Body.Exists(s => s is NewStmt),
 			WhileStmt stmt => ContainsCall(stmt.Condition) || stmt.Body.Exists(ContainsCall),
 			WithStmt stmt => ContainsCall(stmt.Target) || stmt.Body.Exists(ContainsCall),
 			SwitchStmt stmt => ContainsCall(stmt.Expression) || stmt.Cases.Exists(c => c.Body.Exists(ContainsCall) || c.Labels.Exists(label => label != null && ContainsCall(label))),
