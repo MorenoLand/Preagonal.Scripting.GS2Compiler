@@ -346,6 +346,28 @@ public class InterfaceTests
 	}
 
 	[Fact]
+	public void Given_charat_and_positions_method_calls_When_compiling_Then_direct_opcodes_are_emitted()
+	{
+		const string scriptText =
+			"""
+						function onCreated() {
+						  temp.char = player.account.charat(0);
+						  temp.dots = player.account.positions(".");
+						}
+			""";
+
+		var result = Interface.CompileCode(scriptText, withHeader: false);
+		var strings = ReadStringTable(result.ByteCode);
+		var code = ReadBytecodeSegment(result.ByteCode);
+
+		Assert.True(result.Success);
+		Assert.Contains((byte)114, code);
+		Assert.Contains((byte)120, code);
+		Assert.DoesNotContain("charat", strings);
+		Assert.DoesNotContain("positions", strings);
+	}
+
+	[Fact]
 	public void Given_starts_and_ends_method_calls_When_compiling_Then_direct_opcodes_are_emitted()
 	{
 		const string scriptText =

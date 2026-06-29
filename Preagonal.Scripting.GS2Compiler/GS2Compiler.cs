@@ -1129,6 +1129,18 @@ internal static class GS2Compiler
 						_bytecode.Emit(Op.ObjPos);
 						break;
 					}
+					if (call.Name == "charat")
+					{
+						Emit(call.Object);
+						if (NeedsStringConversion(call.Object)) _bytecode.Emit(Op.ConvToString);
+						foreach (var arg in call.Args)
+						{
+							Emit(arg);
+							if (!IsNumberExpr(arg)) _bytecode.Emit(Op.ConvToFloat);
+						}
+						_bytecode.Emit(Op.ObjCharAt);
+						break;
+					}
 					if (call.Name is "starts" or "ends")
 					{
 						Emit(call.Object);
@@ -1155,6 +1167,18 @@ internal static class GS2Compiler
 						}
 						else foreach (var arg in call.Args) Emit(arg);
 						_bytecode.Emit(Op.ObjTokenize);
+						break;
+					}
+					if (call.Name == "positions")
+					{
+						Emit(call.Object);
+						if (NeedsStringConversion(call.Object)) _bytecode.Emit(Op.ConvToString);
+						foreach (var arg in call.Args)
+						{
+							Emit(arg);
+							if (NeedsStringConversion(arg)) _bytecode.Emit(Op.ConvToString);
+						}
+						_bytecode.Emit(Op.ObjPositions);
 						break;
 					}
 					if (call.Name == "clear" && call.Args.Count == 0)
@@ -1824,11 +1848,13 @@ internal static class GS2Compiler
 		ObjLength = 111,
 		ObjPos = 112,
 		Join = 113,
+		ObjCharAt = 114,
 		ObjSubstr = 115,
 		ObjStarts = 116,
 		ObjEnds = 117,
 		ObjTokenize = 118,
 		Translate = 119,
+		ObjPositions = 120,
 		ObjSize = 130,
 		Array = 131,
 		ArrayAssign = 132,
