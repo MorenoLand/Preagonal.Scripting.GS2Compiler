@@ -87,6 +87,11 @@ public class BaselineTests
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "loginserver", "weapon-Serverlist_Patches.gs2")];
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "loginserver", "weapon-StartConnectMessage.gs2")];
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "loginserver", "weaponTestScript.gs2")];
+		yield return [Path.Combine(root, "tests", "scripts", "advanced", "g2k1", "weaponApple Seeds.gs2")];
+		yield return [Path.Combine(root, "tests", "scripts", "advanced", "g2k1", "weaponBread Stack.gs2")];
+		yield return [Path.Combine(root, "tests", "scripts", "advanced", "g2k1", "weaponTestGS2.gs2")];
+		yield return [Path.Combine(root, "tests", "scripts", "advanced", "g2k1", "weaponTorch.gs2")];
+		yield return [Path.Combine(root, "tests", "scripts", "advanced", "graalx", "weaponStaff_Axe.gs2")];
 	}
 
 	[Theory]
