@@ -946,11 +946,18 @@ internal static class GS2Compiler
 					break;
 				case BinaryExpr { Op: "&&" or "||" } logical:
 					List<int>? localSuccessPatches = null;
+					List<int>? localFailPatches = null;
 					var localSuccessStart = 0;
+					var localFailStart = 0;
 					if (logical.Op == "&&" && controlLogical && _conditionSuccessPatches.Count > 0)
 					{
 						localSuccessPatches = _conditionSuccessPatches.Peek();
 						localSuccessStart = localSuccessPatches.Count;
+					}
+					if (logical.Op == "||" && controlLogical && _conditionFailPatches.Count > 0)
+					{
+						localFailPatches = _conditionFailPatches.Peek();
+						localFailStart = localFailPatches.Count;
 					}
 					Emit(logical.Left, false, false, logical.Left is BinaryExpr { Op: "&&" or "||" } ? (controlLogical || negatedLogical) && logical.Op == "||" ? 6 : 1 : 0, controlLogical, negatedLogical);
 					if (!IsBooleanExpr(logical.Left)) _bytecode.Emit(Op.ConvToFloat);
@@ -958,6 +965,11 @@ internal static class GS2Compiler
 					{
 						for (var i = localSuccessStart; i < localSuccessPatches.Count; ++i) _bytecode.PatchShort(localSuccessPatches[i], _bytecode.OpIndex);
 						localSuccessPatches.RemoveRange(localSuccessStart, localSuccessPatches.Count - localSuccessStart);
+					}
+					if (localFailPatches != null)
+					{
+						for (var i = localFailStart; i < localFailPatches.Count; ++i) _bytecode.PatchShort(localFailPatches[i], _bytecode.OpIndex + 1);
+						localFailPatches.RemoveRange(localFailStart, localFailPatches.Count - localFailStart);
 					}
 					_bytecode.Emit(logical.Op == "&&" && controlLogical ? Op.If : logical.Op == "&&" ? Op.And : Op.Or);
 					var loc = _bytecode.EmitNumberOperandPlaceholder();
