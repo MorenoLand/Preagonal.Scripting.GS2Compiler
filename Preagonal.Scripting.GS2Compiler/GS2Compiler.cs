@@ -1083,6 +1083,14 @@ internal static class GS2Compiler
 					}
 					_bytecode.Emit(builtIn);
 					break;
+				case CallExpr { Name: "arraylen" or "sarraylen" } call:
+					for (var i = call.Args.Count - 1; i >= 0; --i)
+					{
+						Emit(call.Args[i]);
+						if (NeedsObjectConversion(call.Args[i])) _bytecode.Emit(Op.ConvToObject);
+					}
+					_bytecode.Emit(Op.ObjSize);
+					break;
 				case CallExpr { Name: "sleep" } call:
 					for (var i = 0; i < call.Args.Count; ++i)
 					{

@@ -323,6 +323,27 @@ public class InterfaceTests
 	}
 
 	[Fact]
+	public void Given_arraylen_calls_When_compiling_Then_object_size_opcode_is_emitted()
+	{
+		const string scriptText =
+			"""
+						function onCreated() {
+						  temp.a = arraylen(players);
+						  temp.b = sarraylen(players);
+						}
+			""";
+
+		var result = Interface.CompileCode(scriptText, withHeader: false);
+		var strings = ReadStringTable(result.ByteCode);
+		var code = ReadBytecodeSegment(result.ByteCode);
+
+		Assert.True(result.Success);
+		Assert.Contains((byte)130, code);
+		Assert.DoesNotContain("arraylen", strings);
+		Assert.DoesNotContain("sarraylen", strings);
+	}
+
+	[Fact]
 	public void Given_size_method_call_When_compiling_Then_object_size_opcode_is_emitted()
 	{
 		const string scriptText =
