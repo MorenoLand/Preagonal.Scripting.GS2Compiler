@@ -4,6 +4,7 @@ Set-Location -LiteralPath $repo
 dotnet build 'Preagonal.Scripting.GS2Compiler.Cli\Preagonal.Scripting.GS2Compiler.Cli.csproj' -v:minimal | Out-Host
 if (!(Test-Path -LiteralPath '.parity-scan')) { New-Item -ItemType Directory -Path '.parity-scan' | Out-Null }
 $scratch = (Resolve-Path -LiteralPath '.parity-scan').Path
+Get-ChildItem -LiteralPath $scratch -Filter '*.bc' -ErrorAction SilentlyContinue | Remove-Item -Force
 $sha = [Security.Cryptography.SHA256]::Create()
 $rows = @()
 Get-ChildItem -LiteralPath 'tests\scripts\advanced' -Filter '*.gs2' -Recurse | ForEach-Object {
@@ -28,3 +29,4 @@ Get-ChildItem -LiteralPath 'tests\scripts\advanced' -Filter '*.gs2' -Recurse | F
 }
 $rows | Where-Object { -not $_.HashMatch } | Sort-Object @{Expression = { [Math]::Abs($_.Delta) } }, Rel | Select-Object -First 14 | Format-Table -AutoSize
 [pscustomobject]@{Total = $rows.Count; Hash = ($rows | Where-Object HashMatch).Count; Size = ($rows | Where-Object SizeMatch).Count}
+Get-ChildItem -LiteralPath $scratch -Filter '*.bc' -ErrorAction SilentlyContinue | Remove-Item -Force
