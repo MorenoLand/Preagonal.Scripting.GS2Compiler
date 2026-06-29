@@ -1865,6 +1865,20 @@ internal static class GS2Compiler
 					builder.Append(_code[_pos] switch { 'n' => '\n', 't' => '\t', 'r' => '\r', '"' => '"', '\'' => '\'', '\\' => '\\', var c => c });
 					_pos++;
 				}
+				else if (_code[_pos] == '\r' && Peek(1) == '\n')
+				{
+					builder.Append('\n');
+					_pos += 2;
+					_line++;
+					_lineStart = _pos;
+				}
+				else if (_code[_pos] == '\n')
+				{
+					builder.Append('\n');
+					_pos++;
+					_line++;
+					_lineStart = _pos;
+				}
 				else builder.Append(_code[_pos++]);
 			}
 			if (_pos < _code.Length) _pos++;
