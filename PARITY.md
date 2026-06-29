@@ -1,6 +1,6 @@
 # GS2 parity progress
 
-Current advanced fixture score: 148 / 155 byte-for-byte hashes, 148 / 155 byte sizes.
+Current advanced fixture score: 153 / 155 byte-for-byte hashes, 153 / 155 byte sizes.
 
 Locked direct builtins:
 - `setarray(object, size)` emits `OP_SETARRAY` (`39`) directly and does not add `setarray` to the string table.
@@ -46,11 +46,13 @@ Locked advanced parity fixtures:
 - `tests/scripts/advanced/graalx/weapon+Guns_Debug.gs2`
 - `tests/scripts/advanced/graalx/weapon+Guns_KuJi.gs2`
 - `tests/scripts/advanced/graalx/weapon+Guns_M4.gs2`
+- `tests/scripts/advanced/graalx/weapon+Guns_Shotgun.gs2`
 - `tests/scripts/advanced/graalx/weapon+Hats.gs2`
 - `tests/scripts/advanced/graalx/weapon+Melee.gs2`
 - `tests/scripts/advanced/graalx/weapon+Presents.gs2`
 - `tests/scripts/advanced/graalx/weapon+Seeds.gs2`
 - `tests/scripts/advanced/graalx/weapon%045CarSystem.gs2`
+- `tests/scripts/advanced/graalx/weapon%045Movement.gs2`
 - `tests/scripts/advanced/graalx/weapon%045System.gs2`
 - `tests/scripts/advanced/graalx/weaponBackups_Radio.gs2`
 - `tests/scripts/advanced/graalx/weapon-BizSystem.gs2`
@@ -97,9 +99,12 @@ Locked advanced parity fixtures:
 - `tests/scripts/advanced/graalx/weaponLevelGen.gs2`
 - `tests/scripts/advanced/graalx/weapon-Map.gs2`
 - `tests/scripts/advanced/graalx/weapon-Minimap.gs2`
+- `tests/scripts/advanced/graalx/weapon-Movement.gs2`
+- `tests/scripts/advanced/graalx/weapon-Movement2.gs2`
 - `tests/scripts/advanced/graalx/weaponNotepad.gs2`
 - `tests/scripts/advanced/graalx/weapon-NBuySys.gs2`
 - `tests/scripts/advanced/graalx/weapon-NewGangSys.gs2`
+- `tests/scripts/advanced/graalx/weapon-NewMovement.gs2`
 - `tests/scripts/advanced/graalx/weapon-NewWeather.gs2`
 - `tests/scripts/advanced/graalx/weapon-News.gs2`
 - `tests/scripts/advanced/graalx/weapon-Profile.gs2`

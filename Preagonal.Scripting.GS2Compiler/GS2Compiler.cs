@@ -1119,7 +1119,7 @@ internal static class GS2Compiler
 					break;
 				case NumberExpr number:
 					_bytecode.Emit(Op.TypeNumber);
-					if (number.Text.Contains('.', StringComparison.Ordinal)) _bytecode.EmitDoubleNumber(number.Text);
+					if (number.Text.Contains('.', StringComparison.Ordinal)) _bytecode.EmitDoubleNumber(CurrentFloatText(number.Text));
 					else _bytecode.EmitDynamicNumber(int.Parse(number.Text, CultureInfo.InvariantCulture));
 					break;
 				case StringExpr str:
@@ -1606,6 +1606,8 @@ internal static class GS2Compiler
 			_negativeFloatText[text] = next;
 			return next;
 		}
+
+		private string CurrentFloatText(string text) => _negativeFloatText.TryGetValue(text, out var value) ? value : text;
 
 		private static bool NeedsObjectConversion(Expr expr) => expr switch
 		{
