@@ -1143,6 +1143,19 @@ internal static class GS2Compiler
 						_bytecode.Emit(Op.ObjTrim);
 						break;
 					}
+					if (call.Name == "tokenize")
+					{
+						Emit(call.Object);
+						if (NeedsStringConversion(call.Object)) _bytecode.Emit(Op.ConvToString);
+						if (call.Args.Count == 0)
+						{
+							_bytecode.Emit(Op.TypeString);
+							_bytecode.EmitDynamicStringIndex(_bytecode.GetString(" ,"));
+						}
+						else foreach (var arg in call.Args) Emit(arg);
+						_bytecode.Emit(Op.ObjTokenize);
+						break;
+					}
 					_bytecode.Emit(Op.TypeArray);
 					for (var i = call.Args.Count - 1; i >= 0; --i) Emit(call.Args[i]);
 					Emit(call.Object);
@@ -1775,6 +1788,7 @@ internal static class GS2Compiler
 		ObjSubstr = 115,
 		ObjStarts = 116,
 		ObjEnds = 117,
+		ObjTokenize = 118,
 		Translate = 119,
 		ObjSize = 130,
 		Array = 131,

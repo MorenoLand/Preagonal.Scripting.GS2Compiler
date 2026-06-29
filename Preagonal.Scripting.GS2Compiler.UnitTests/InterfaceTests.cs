@@ -386,6 +386,27 @@ public class InterfaceTests
 		Assert.DoesNotContain("trim", strings);
 	}
 
+	[Fact]
+	public void Given_tokenize_method_call_When_compiling_Then_object_tokenize_opcode_is_emitted()
+	{
+		const string scriptText =
+			"""
+						function onCreated() {
+						  temp.a = player.chat.tokenize();
+						  temp.b = player.chat.tokenize("|");
+						}
+			""";
+
+		var result = Interface.CompileCode(scriptText, withHeader: false);
+		var strings = ReadStringTable(result.ByteCode);
+		var code = ReadBytecodeSegment(result.ByteCode);
+
+		Assert.True(result.Success);
+		Assert.Contains((byte)118, code);
+		Assert.Contains(" ,", strings);
+		Assert.DoesNotContain("tokenize", strings);
+	}
+
 	private static List<string> ReadFunctionNames(byte[] bytecode)
 	{
 		var offset = 0;
