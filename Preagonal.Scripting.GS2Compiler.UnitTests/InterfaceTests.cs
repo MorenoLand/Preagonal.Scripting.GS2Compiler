@@ -253,6 +253,11 @@ public class InterfaceTests
 						  temp.a = random(1, 2);
 						  temp.b = min(1, 2);
 						  temp.c = max(1, 2);
+						  temp.d = exp(2);
+						  temp.e = log(2, 10);
+						  temp.f = pow(2, 3);
+						  temp.g = getangle(1, 0);
+						  temp.h = getdir(1, 0);
 						}
 			""";
 
@@ -262,11 +267,21 @@ public class InterfaceTests
 
 		Assert.True(result.Success);
 		Assert.Contains((byte)87, code);
+		Assert.Contains((byte)91, code);
+		Assert.Contains((byte)92, code);
 		Assert.Contains((byte)93, code);
 		Assert.Contains((byte)94, code);
+		Assert.Contains((byte)95, code);
+		Assert.Contains((byte)96, code);
+		Assert.Contains((byte)65, code);
 		Assert.DoesNotContain("random", strings);
 		Assert.DoesNotContain("min", strings);
 		Assert.DoesNotContain("max", strings);
+		Assert.DoesNotContain("exp", strings);
+		Assert.DoesNotContain("log", strings);
+		Assert.DoesNotContain("pow", strings);
+		Assert.DoesNotContain("getangle", strings);
+		Assert.DoesNotContain("getdir", strings);
 	}
 
 	[Fact]

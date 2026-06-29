@@ -1075,6 +1075,14 @@ internal static class GS2Compiler
 					}
 					_bytecode.Emit(builtIn);
 					break;
+				case CallExpr call when NonReversedBuiltInCalls.TryGetValue(call.Name, out var builtIn):
+					for (var i = 0; i < call.Args.Count; ++i)
+					{
+						Emit(call.Args[i]);
+						if (!IsNumberExpr(call.Args[i])) _bytecode.Emit(Op.ConvToFloat);
+					}
+					_bytecode.Emit(builtIn);
+					break;
 				case CallExpr { Name: "sleep" } call:
 					for (var i = 0; i < call.Args.Count; ++i)
 					{
@@ -1325,9 +1333,18 @@ internal static class GS2Compiler
 			["vecx"] = Op.Vecx,
 			["vecy"] = Op.Vecy,
 			["abs"] = Op.Abs,
+			["exp"] = Op.Exp,
+			["log"] = Op.Log,
 			["random"] = Op.Random,
 			["min"] = Op.Min,
 			["max"] = Op.Max
+		};
+
+		private static readonly Dictionary<string, Op> NonReversedBuiltInCalls = new(StringComparer.Ordinal)
+		{
+			["pow"] = Op.Pow,
+			["getangle"] = Op.GetAngle,
+			["getdir"] = Op.GetDir
 		};
 
 		private static readonly HashSet<string> NonReturningBuiltInCalls = new(StringComparer.Ordinal)
@@ -1876,8 +1893,12 @@ internal static class GS2Compiler
 		Sin = 88,
 		Cos = 89,
 		Arctan = 90,
+		Exp = 91,
+		Log = 92,
 		Min = 93,
 		Max = 94,
+		GetAngle = 95,
+		GetDir = 96,
 		Vecx = 97,
 		Vecy = 98,
 		ShiftLeft = 101,
