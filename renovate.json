@@ -1,6 +1,19 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended"
+    "config:recommended",
+    "group:all"
+  ],
+  "baseBranchPatterns": [
+    "dev"
+  ],
+  "packageRules": [
+    {
+      "matchDatasources": ["nuget"],
+      "registryUrls": [
+        "https://api.nuget.org/v3/index.json",
+        "https://packages.preagonal.net/nuget/"
+      ]
+    }
   ]
 }
