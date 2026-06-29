@@ -599,6 +599,7 @@ internal static class GS2Compiler
 		private readonly Stack<List<int>> _conditionSuccessPatches = new();
 		private readonly Dictionary<string, string> _negativeFloatText = new(StringComparer.Ordinal);
 		private int _newObjectCount;
+		private bool _dynamicMethodName;
 
 		public Emitter(BytecodeWriter bytecode, Dictionary<string, Expr> constants, Dictionary<string, Dictionary<string, int>> enums)
 		{
@@ -1046,7 +1047,7 @@ internal static class GS2Compiler
 					if (binary.Op == "&" && binary.Left is not NumberExpr) _bytecode.Emit(Op.ConvToFloat);
 					Emit(binary.Right);
 					if ((IsNumericOp(binary.Op) || IsComparisonOp(binary.Op)) && NeedsNumericConversion(binary.Right)) _bytecode.Emit(Op.ConvToFloat);
-					if (binary.Op == "@" && binary.Right is not StringExpr and not TernaryExpr { WhenTrue: StringExpr, WhenFalse: StringExpr }) _bytecode.Emit(Op.ConvToString);
+					if (binary.Op == "@" && (_dynamicMethodName || binary.Right is not StringExpr and not TernaryExpr { WhenTrue: StringExpr, WhenFalse: StringExpr })) _bytecode.Emit(Op.ConvToString);
 					_bytecode.Emit(BinaryOpcode(binary.Op));
 					break;
 				case MemberExpr member:
@@ -1284,7 +1285,9 @@ internal static class GS2Compiler
 					for (var i = call.Args.Count - 1; i >= 0; --i) Emit(call.Args[i]);
 					Emit(call.Object);
 					if (NeedsObjectConversion(call.Object) || call.Object is ArrayIndexExpr) _bytecode.Emit(Op.ConvToObject);
+					_dynamicMethodName = true;
 					Emit(call.Name);
+					_dynamicMethodName = false;
 					if (NeedsStringConversion(call.Name)) _bytecode.Emit(Op.ConvToString);
 					_bytecode.Emit(Op.MemberAccess);
 					_bytecode.Emit(Op.Call);
