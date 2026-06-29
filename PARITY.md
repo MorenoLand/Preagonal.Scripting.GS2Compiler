@@ -1,6 +1,6 @@
 # GS2 parity progress
 
-Current advanced fixture score: 141 / 155 byte-for-byte hashes, 144 / 155 byte sizes.
+Current advanced fixture score: 142 / 155 byte-for-byte hashes, 144 / 155 byte sizes.
 
 Locked direct builtins:
 - `setarray(object, size)` emits `OP_SETARRAY` (`39`) directly and does not add `setarray` to the string table.
@@ -17,6 +17,7 @@ Locked advanced parity fixtures:
 - `tests/scripts/advanced/g2k1/weaponGold Axe.gs2`
 - `tests/scripts/advanced/g2k1/weaponGold Hammer.gs2`
 - `tests/scripts/advanced/g2k1/weapongxtest.gs2`
+- `tests/scripts/advanced/g2k1/weaponjoey_test.gs2`
 - `tests/scripts/advanced/g2k1/weaponHat-Trading.gs2`
 - `tests/scripts/advanced/g2k1/weaponHat-Trading-GS2.gs2`
 - `tests/scripts/advanced/g2k1/weaponMemeCentral.gs2`

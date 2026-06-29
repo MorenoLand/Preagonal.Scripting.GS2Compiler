@@ -661,7 +661,7 @@ internal static class GS2Compiler
 
 		private void EmitUnusedExpression(Expr expr)
 		{
-			var preservePostfixValue = expr is not UnaryExpr { Op: "++" or "--", Postfix: true };
+			var preservePostfixValue = expr is not UnaryExpr { Op: "++" or "--" };
 			Emit(expr, false, true, 0, false, false, preservePostfixValue);
 		}
 
@@ -1006,12 +1006,12 @@ internal static class GS2Compiler
 					break;
 				case BinaryExpr { Op: " " or "\n" or "\t", Left: var left, Right: var right } spacedConcat:
 					Emit(left);
-					if (left is not StringExpr) _bytecode.Emit(Op.ConvToString);
+					if (NeedsStringConversion(left)) _bytecode.Emit(Op.ConvToString);
 					_bytecode.Emit(Op.TypeString);
 					_bytecode.EmitDynamicStringIndex(_bytecode.GetString(spacedConcat.Op));
 					_bytecode.Emit(Op.Join);
 					Emit(right);
-					if (right is not StringExpr) _bytecode.Emit(Op.ConvToString);
+					if (NeedsStringConversion(right)) _bytecode.Emit(Op.ConvToString);
 					_bytecode.Emit(Op.Join);
 					break;
 				case InExpr inExpr:
@@ -1178,12 +1178,12 @@ internal static class GS2Compiler
 				case UnaryExpr { Op: "++", Expression: var incValue }:
 					Emit(incValue);
 					_bytecode.Emit(Op.Inc);
-					_bytecode.Emit(Op.IndexDec);
+					if (!preservePostfixValue) _bytecode.Emit(Op.IndexDec);
 					break;
 				case UnaryExpr { Op: "--", Expression: var decValue }:
 					Emit(decValue);
 					_bytecode.Emit(Op.Dec);
-					_bytecode.Emit(Op.IndexDec);
+					if (!preservePostfixValue) _bytecode.Emit(Op.IndexDec);
 					break;
 				case CastExpr { Type: "int", Expression: var castValue }:
 					Emit(castValue);
