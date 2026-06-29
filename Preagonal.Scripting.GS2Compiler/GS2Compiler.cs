@@ -1196,7 +1196,7 @@ internal static class GS2Compiler
 					if (call.Name == "index")
 					{
 						Emit(call.Object);
-						if (NeedsObjectConversion(call.Object)) _bytecode.Emit(Op.ConvToObject);
+						if (NeedsObjectConversion(call.Object) || call.Object is ArrayIndexExpr) _bytecode.Emit(Op.ConvToObject);
 						foreach (var arg in call.Args) Emit(arg);
 						_bytecode.Emit(Op.ObjIndex);
 						break;
