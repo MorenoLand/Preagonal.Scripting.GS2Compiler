@@ -880,7 +880,8 @@ internal static class GS2Compiler
 					_bytecode.Emit(Op.CopyLastOp);
 					_bytecode.Emit(op == "@=" ? Op.ConvToString : Op.ConvToFloat);
 					Emit(right);
-					if (op != "@=" && NeedsNumericConversion(right)) _bytecode.Emit(Op.ConvToFloat);
+					if (op == "@=" && NeedsStringConversion(right)) _bytecode.Emit(Op.ConvToString);
+					else if (op != "@=" && NeedsNumericConversion(right)) _bytecode.Emit(Op.ConvToFloat);
 					_bytecode.Emit(CompoundOpcode(op));
 					_bytecode.Emit(Op.ArrayMultiDimAssign);
 					break;
@@ -889,7 +890,8 @@ internal static class GS2Compiler
 					_bytecode.Emit(Op.CopyLastOp);
 					_bytecode.Emit(op == "@=" ? Op.ConvToString : Op.ConvToFloat);
 					Emit(right);
-					if (op != "@=" && NeedsNumericConversion(right)) _bytecode.Emit(Op.ConvToFloat);
+					if (op == "@=" && NeedsStringConversion(right)) _bytecode.Emit(Op.ConvToString);
+					else if (op != "@=" && NeedsNumericConversion(right)) _bytecode.Emit(Op.ConvToFloat);
 					_bytecode.Emit(CompoundOpcode(op));
 					_bytecode.Emit(Op.ArrayAssign);
 					break;
@@ -898,7 +900,8 @@ internal static class GS2Compiler
 					_bytecode.Emit(Op.CopyLastOp);
 					_bytecode.Emit(op == "@=" ? Op.ConvToString : Op.ConvToFloat);
 					Emit(right);
-					if (op != "@=" && NeedsNumericConversion(right)) _bytecode.Emit(Op.ConvToFloat);
+					if (op == "@=" && NeedsStringConversion(right)) _bytecode.Emit(Op.ConvToString);
+					else if (op != "@=" && NeedsNumericConversion(right)) _bytecode.Emit(Op.ConvToFloat);
 					_bytecode.Emit(CompoundOpcode(op));
 					_bytecode.Emit(Op.Assign);
 					break;
@@ -993,7 +996,7 @@ internal static class GS2Compiler
 				case DynamicMemberExpr member:
 					Emit(member.Object);
 					if (NeedsObjectConversion(member.Object)) _bytecode.Emit(Op.ConvToObject);
-					if (member.Name is StringCastExpr nameCast)
+					if (member.Name is StringCastExpr { Expression: IdentifierExpr } nameCast)
 					{
 						Emit(nameCast.Expression);
 						if (NeedsNumericConversion(nameCast.Expression)) _bytecode.Emit(Op.ConvToFloat);
