@@ -1,6 +1,6 @@
 # GS2 parity progress
 
-Current advanced fixture score: 100 / 155 byte-for-byte hashes, 105 / 155 byte sizes.
+Current advanced fixture score: 105 / 155 byte-for-byte hashes, 109 / 155 byte sizes.
 
 Locked direct builtins:
 - `setarray(object, size)` emits `OP_SETARRAY` (`39`) directly and does not add `setarray` to the string table.
@@ -41,6 +41,8 @@ Locked advanced parity fixtures:
 - `tests/scripts/advanced/graalx/weapon+Melee.gs2`
 - `tests/scripts/advanced/graalx/weapon+Presents.gs2`
 - `tests/scripts/advanced/graalx/weapon+Seeds.gs2`
+- `tests/scripts/advanced/graalx/weapon-BizSystem.gs2`
+- `tests/scripts/advanced/graalx/weaponBrasas.gs2`
 - `tests/scripts/advanced/graalx/weapon-BuySys.gs2`
 - `tests/scripts/advanced/graalx/weapon-DRescript.gs2`
 - `tests/scripts/advanced/graalx/weapon-EraThingyForKinetaro.gs2`
@@ -67,10 +69,12 @@ Locked advanced parity fixtures:
 - `tests/scripts/advanced/graalx/weaponJobs_Roller.gs2`
 - `tests/scripts/advanced/graalx/weaponJobs_Stack.gs2`
 - `tests/scripts/advanced/graalx/weaponJobs_Water Can.gs2`
+- `tests/scripts/advanced/graalx/weapon-Job Quests.gs2`
 - `tests/scripts/advanced/graalx/weaponKinetaro.gs2`
 - `tests/scripts/advanced/graalx/weaponKuJi_Items.gs2`
 - `tests/scripts/advanced/graalx/weaponKuJi_Tool.gs2`
 - `tests/scripts/advanced/graalx/weaponKuJi_Staff.gs2`
+- `tests/scripts/advanced/graalx/weaponLevelEditor.gs2`
 - `tests/scripts/advanced/graalx/weaponLevelGen.gs2`
 - `tests/scripts/advanced/graalx/weapon-Minimap.gs2`
 - `tests/scripts/advanced/graalx/weapon-NBuySys.gs2`
