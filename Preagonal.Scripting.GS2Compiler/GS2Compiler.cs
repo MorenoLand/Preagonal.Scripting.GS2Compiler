@@ -1112,6 +1112,18 @@ internal static class GS2Compiler
 						_bytecode.Emit(Op.ObjSubstr);
 						break;
 					}
+					if (call.Name == "pos")
+					{
+						Emit(call.Object);
+						if (NeedsStringConversion(call.Object)) _bytecode.Emit(Op.ConvToString);
+						foreach (var arg in call.Args)
+						{
+							Emit(arg);
+							if (NeedsStringConversion(arg)) _bytecode.Emit(Op.ConvToString);
+						}
+						_bytecode.Emit(Op.ObjPos);
+						break;
+					}
 					_bytecode.Emit(Op.TypeArray);
 					for (var i = call.Args.Count - 1; i >= 0; --i) Emit(call.Args[i]);
 					Emit(call.Object);
@@ -1737,6 +1749,7 @@ internal static class GS2Compiler
 		ShiftRight = 102,
 		Char = 103,
 		ObjLength = 111,
+		ObjPos = 112,
 		Join = 113,
 		ObjSubstr = 115,
 		Translate = 119,

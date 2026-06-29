@@ -326,6 +326,25 @@ public class InterfaceTests
 		Assert.DoesNotContain("substring", strings);
 	}
 
+	[Fact]
+	public void Given_pos_method_call_When_compiling_Then_object_pos_opcode_is_emitted()
+	{
+		const string scriptText =
+			"""
+						function onCreated() {
+						  temp.index = player.account.pos("a");
+						}
+			""";
+
+		var result = Interface.CompileCode(scriptText, withHeader: false);
+		var strings = ReadStringTable(result.ByteCode);
+		var code = ReadBytecodeSegment(result.ByteCode);
+
+		Assert.True(result.Success);
+		Assert.Contains((byte)112, code);
+		Assert.DoesNotContain("pos", strings);
+	}
+
 	private static List<string> ReadFunctionNames(byte[] bytecode)
 	{
 		var offset = 0;
