@@ -1,6 +1,6 @@
 # GS2 parity progress
 
-Current advanced fixture score: 145 / 155 byte-for-byte hashes, 145 / 155 byte sizes.
+Current advanced fixture score: 146 / 155 byte-for-byte hashes, 146 / 155 byte sizes.
 
 Locked direct builtins:
 - `setarray(object, size)` emits `OP_SETARRAY` (`39`) directly and does not add `setarray` to the string table.
@@ -142,6 +142,7 @@ Locked advanced parity fixtures:
 - `tests/scripts/advanced/loginserver/weapon-IRC_Installer.gs2`
 - `tests/scripts/advanced/loginserver/weapon-IRC_Login4.gs2`
 - `tests/scripts/advanced/loginserver/weapon-LoginScreen.gs2`
+- `tests/scripts/advanced/loginserver/weapon-ReShared.gs2`
 - `tests/scripts/advanced/loginserver/weapon-Rescripted_-F2LogWindow.gs2`
 - `tests/scripts/advanced/loginserver/weapon-Rescripted_IRC_Login2001.gs2`
 - `tests/scripts/advanced/loginserver/weapon-Rescripted_IRC_Login2.gs2`

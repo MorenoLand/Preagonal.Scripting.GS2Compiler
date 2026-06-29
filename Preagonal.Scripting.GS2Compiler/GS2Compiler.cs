@@ -427,6 +427,7 @@ internal static class GS2Compiler
 					{
 						IdentifierExpr id => new CallExpr(id.Name, args),
 						MemberExpr member => new MethodCallExpr(member.Object, member.Name, args),
+						CallExpr call => new ChainedCallExpr(call, args),
 						_ => expr
 					};
 					continue;
@@ -1265,6 +1266,12 @@ internal static class GS2Compiler
 					_bytecode.EmitDynamicStringIndex(_bytecode.GetString(call.Name));
 					_bytecode.Emit(Op.Call);
 					break;
+				case ChainedCallExpr call:
+					_bytecode.Emit(Op.TypeArray);
+					for (var i = call.Args.Count - 1; i >= 0; --i) Emit(call.Args[i]);
+					Emit(call.Call);
+					_bytecode.Emit(Op.Call);
+					break;
 				case MethodCallExpr call:
 					if (call.Name == "size" && call.Args.Count == 0)
 					{
@@ -1614,6 +1621,7 @@ internal static class GS2Compiler
 		private static bool ContainsCall(Expr expr) => expr switch
 		{
 			CallExpr => true,
+			ChainedCallExpr => true,
 			MethodCallExpr => true,
 			InExpr inExpr => ContainsCall(inExpr.Expression) || ContainsCall(inExpr.Lower) || (inExpr.Upper != null && ContainsCall(inExpr.Upper)),
 			BinaryExpr binary => ContainsCall(binary.Left) || ContainsCall(binary.Right),
@@ -2034,6 +2042,7 @@ internal static class GS2Compiler
 	private sealed record BoolExpr(bool Value) : Expr;
 	private sealed record NullExpr : Expr;
 	private sealed record CallExpr(string Name, List<Expr> Args) : Expr;
+	private sealed record ChainedCallExpr(CallExpr Call, List<Expr> Args) : Expr;
 	private sealed record MethodCallExpr(Expr Object, string Name, List<Expr> Args) : Expr;
 	private sealed record NewObjectExpr(string TypeName, List<Expr> Args) : Expr;
 	private sealed record NewArrayExpr(List<int> Dimensions) : Expr;
