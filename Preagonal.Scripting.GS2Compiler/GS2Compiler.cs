@@ -632,7 +632,8 @@ internal static class GS2Compiler
 		{
 			if (statement is ExprStmt exprStatement)
 			{
-				EmitUnusedExpression(exprStatement.Expression);
+				if (!discardCallReturn) Emit(exprStatement.Expression);
+				else EmitUnusedExpression(exprStatement.Expression);
 				if (!discardCallReturn) { }
 				else if (exprStatement.Expression is CallExpr call && NonReturningBuiltInCalls.Contains(call.Name)) { }
 				else if (exprStatement.Expression is MethodCallExpr methodCall && NonReturningMethodCalls.Contains(methodCall.Name)) { }
