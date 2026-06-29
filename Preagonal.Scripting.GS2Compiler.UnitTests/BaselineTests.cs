@@ -100,6 +100,12 @@ public class BaselineTests
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "graalx", "weapon+Melee.gs2")];
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "graalx", "weapon+Seeds.gs2")];
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "graalx", "weapon-Weather.gs2")];
+		yield return [Path.Combine(root, "tests", "scripts", "advanced", "graalx", "weapon-Events.gs2")];
+		yield return [Path.Combine(root, "tests", "scripts", "advanced", "graalx", "weaponEvents_Lazer.gs2")];
+		yield return [Path.Combine(root, "tests", "scripts", "advanced", "graalx", "weaponFileEditor.gs2")];
+		yield return [Path.Combine(root, "tests", "scripts", "advanced", "graalx", "weapon-Functions.gs2")];
+		yield return [Path.Combine(root, "tests", "scripts", "advanced", "graalx", "weapon-GraalDB.gs2")];
+		yield return [Path.Combine(root, "tests", "scripts", "advanced", "graalx", "weapon-Gui.gs2")];
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "graalx", "weaponStaff_Axe.gs2")];
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "graalx", "weapon-Job Quests.gs2")];
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "graalx", "weaponLevelEditor.gs2")];
