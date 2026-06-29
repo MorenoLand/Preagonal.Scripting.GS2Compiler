@@ -111,6 +111,8 @@ internal static class GS2Compiler
 			return [];
 		}
 
+		private List<Stmt> ParseBody() => _current.Type == TokenType.LeftBrace ? ParseBlock() : [new InlineStmt(ParseStatement())];
+
 		private List<Stmt> ParseBlock()
 		{
 			List<Stmt> statements = [];
@@ -147,8 +149,8 @@ internal static class GS2Compiler
 				Expect(TokenType.LeftParen);
 				var condition = ParseExpression();
 				Expect(TokenType.RightParen);
-				var thenBody = _current.Type == TokenType.LeftBrace ? ParseBlock() : [ParseStatement()];
-				var elseBody = Match(TokenType.Else) ? (_current.Type == TokenType.LeftBrace ? ParseBlock() : [ParseStatement()]) : Match(TokenType.ElseIf) ? [ParseElseIfStatement()] : [];
+				var thenBody = ParseBody();
+				var elseBody = Match(TokenType.Else) ? ParseBody() : Match(TokenType.ElseIf) ? [ParseElseIfStatement()] : [];
 				return new IfStmt(condition, thenBody, elseBody);
 			}
 			if (Match(TokenType.For)) return ParseForStatement();
@@ -157,14 +159,14 @@ internal static class GS2Compiler
 				Expect(TokenType.LeftParen);
 				var condition = ParseExpression();
 				Expect(TokenType.RightParen);
-				return new WhileStmt(condition, _current.Type == TokenType.LeftBrace ? ParseBlock() : [ParseStatement()]);
+				return new WhileStmt(condition, ParseBody());
 			}
 			if (Match(TokenType.With))
 			{
 				Expect(TokenType.LeftParen);
 				var target = ParseExpression();
 				Expect(TokenType.RightParen);
-				return new WithStmt(target, _current.Type == TokenType.LeftBrace ? ParseBlock() : [ParseStatement()]);
+				return new WithStmt(target, ParseBody());
 			}
 			if (Match(TokenType.Switch)) return ParseSwitchStatement();
 			var before = _current;
@@ -190,8 +192,8 @@ internal static class GS2Compiler
 			Expect(TokenType.LeftParen);
 			var condition = ParseExpression();
 			Expect(TokenType.RightParen);
-			var thenBody = _current.Type == TokenType.LeftBrace ? ParseBlock() : [ParseStatement()];
-			var elseBody = Match(TokenType.Else) ? (_current.Type == TokenType.LeftBrace ? ParseBlock() : [ParseStatement()]) : Match(TokenType.ElseIf) ? [ParseElseIfStatement()] : [];
+			var thenBody = ParseBody();
+			var elseBody = Match(TokenType.Else) ? ParseBody() : Match(TokenType.ElseIf) ? [ParseElseIfStatement()] : [];
 			return new IfStmt(condition, thenBody, elseBody);
 		}
 
@@ -204,14 +206,14 @@ internal static class GS2Compiler
 				if (first == null) Error("malformed input");
 				var source = ParseExpression();
 				Expect(TokenType.RightParen);
-				return new ForEachStmt(first ?? new NumberExpr("0"), source, _current.Type == TokenType.LeftBrace ? ParseBlock() : [ParseStatement()]);
+				return new ForEachStmt(first ?? new NumberExpr("0"), source, ParseBody());
 			}
 			Expect(TokenType.Semicolon);
 			var condition = _current.Type == TokenType.Semicolon ? new BoolExpr(true) : ParseExpression();
 			Expect(TokenType.Semicolon);
 			var post = _current.Type == TokenType.RightParen ? null : ParseExpression();
 			Expect(TokenType.RightParen);
-			return new ForStmt(first, condition, post, _current.Type == TokenType.LeftBrace ? ParseBlock() : [ParseStatement()]);
+			return new ForStmt(first, condition, post, ParseBody());
 		}
 
 		private Stmt ParseSwitchStatement()
@@ -473,7 +475,7 @@ internal static class GS2Compiler
 					do args.Add(ParseExpression()); while (Match(TokenType.Comma));
 				}
 				Expect(TokenType.RightParen);
-				return new LambdaExpr($"function_{_lambdaId++}_1", args, _current.Type == TokenType.LeftBrace ? ParseBlock() : [ParseStatement()]);
+				return new LambdaExpr($"function_{_lambdaId++}_1", args, ParseBody());
 			}
 			if (Match(TokenType.LeftBrace))
 			{
@@ -620,12 +622,15 @@ internal static class GS2Compiler
 
 		private void Emit(Expr expr) => Emit(expr, false, true, 0);
 
-		public void EmitStatement(Stmt statement)
+		public void EmitStatement(Stmt statement) => EmitStatement(statement, true);
+
+		private void EmitStatement(Stmt statement, bool discardCallReturn)
 		{
 			if (statement is ExprStmt exprStatement)
 			{
 				Emit(exprStatement.Expression);
-				if (exprStatement.Expression is CallExpr call && NonReturningBuiltInCalls.Contains(call.Name)) { }
+				if (!discardCallReturn) { }
+				else if (exprStatement.Expression is CallExpr call && NonReturningBuiltInCalls.Contains(call.Name)) { }
 				else if (exprStatement.Expression is CallExpr or MethodCallExpr) _bytecode.Emit(Op.IndexDec);
 			}
 			else if (statement is ReturnStmt returnStatement)
@@ -641,6 +646,7 @@ internal static class GS2Compiler
 			else if (statement is SwitchStmt switchStatement) EmitSwitch(switchStatement);
 			else if (statement is BreakStmt) EmitBreak();
 			else if (statement is ContinueStmt) EmitContinue();
+			else if (statement is InlineStmt inlineStatement) EmitStatement(inlineStatement.Statement, false);
 			else if (statement is BlockStmt blockStatement) foreach (var stmt in blockStatement.Body) EmitStatement(stmt);
 			else if (statement is NewStmt newStatement) EmitNewStatement(newStatement);
 		}
@@ -1208,6 +1214,7 @@ internal static class GS2Compiler
 		private static bool ContainsCall(Stmt statement) => statement switch
 		{
 			ExprStmt expr => ContainsCall(expr.Expression),
+			InlineStmt stmt => ContainsCall(stmt.Statement),
 			BlockStmt stmt => stmt.Body.Exists(ContainsCall),
 			ReturnStmt expr => ContainsCall(expr.Expression),
 			IfStmt stmt => stmt.ThenBody.Exists(ContainsCall) || stmt.ElseBody.Exists(ContainsCall) || ContainsCall(stmt.Condition),
@@ -1593,6 +1600,7 @@ internal static class GS2Compiler
 	private sealed record FunctionNode(string Name, string? ObjectName, bool Public, List<Expr> Args, List<Stmt> Body);
 	private abstract record Stmt;
 	private sealed record ExprStmt(Expr Expression) : Stmt;
+	private sealed record InlineStmt(Stmt Statement) : Stmt;
 	private sealed record BlockStmt(List<Stmt> Body) : Stmt;
 	private sealed record ReturnStmt(Expr Expression) : Stmt;
 	private sealed record IfStmt(Expr Condition, List<Stmt> ThenBody, List<Stmt> ElseBody) : Stmt;
