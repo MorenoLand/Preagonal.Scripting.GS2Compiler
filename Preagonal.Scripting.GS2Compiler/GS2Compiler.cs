@@ -608,7 +608,7 @@ internal static class GS2Compiler
 			_bytecode.Emit(Op.Jmp);
 			if (node.Body.Exists(ContainsCall)) _bytecode.Emit(Op.CmdCall);
 			foreach (var statement in node.Body) EmitStatement(statement);
-			if (node.Body.Count == 0 || node.Body[^1] is not ReturnStmt)
+			if (node.Body.Count == 0 || !DefinitelyReturns(node.Body[^1]))
 			{
 				_bytecode.Emit(Op.TypeNumber);
 				_bytecode.EmitDynamicNumber(0);
@@ -625,6 +625,17 @@ internal static class GS2Compiler
 		{
 			foreach (var statement in statements) EmitStatement(statement);
 		}
+
+		private static bool DefinitelyReturns(Stmt statement) => statement switch
+		{
+			ReturnStmt => true,
+			InlineStmt inlineStatement => DefinitelyReturns(inlineStatement.Statement),
+			BlockStmt blockStatement => blockStatement.Body.Count > 0 && DefinitelyReturns(blockStatement.Body[^1]),
+			IfStmt ifStatement => ifStatement.HasElse && BodyDefinitelyReturns(ifStatement.ThenBody) && BodyDefinitelyReturns(ifStatement.ElseBody),
+			_ => false
+		};
+
+		private static bool BodyDefinitelyReturns(List<Stmt> body) => body.Count > 0 && DefinitelyReturns(body[^1]);
 
 		private void Emit(Expr expr) => Emit(expr, false, true, 0);
 
