@@ -469,11 +469,11 @@ internal static class GS2Compiler
 			{
 				if (_current.Type == TokenType.LeftBracket)
 				{
-					List<int> dimensions = [];
+					List<Expr> dimensions = [];
 					do
 					{
 						Expect(TokenType.LeftBracket);
-						dimensions.Add(int.Parse(Expect(TokenType.Number).Text, NumberStyles.Integer, CultureInfo.InvariantCulture));
+						dimensions.Add(ParseExpression());
 						Expect(TokenType.RightBracket);
 					}
 					while (_current.Type == TokenType.LeftBracket);
@@ -1516,8 +1516,7 @@ internal static class GS2Compiler
 				case NewArrayExpr array:
 					for (var i = 0; i < array.Dimensions.Count; ++i)
 					{
-						_bytecode.Emit(Op.TypeNumber);
-						_bytecode.EmitDynamicNumber(array.Dimensions[i]);
+						Emit(array.Dimensions[i]);
 						_bytecode.Emit(i == 0 ? Op.ArrayNew : Op.ArrayNewMultiDim);
 					}
 					break;
@@ -2152,7 +2151,7 @@ internal static class GS2Compiler
 	private sealed record MethodCallExpr(Expr Object, string Name, List<Expr> Args) : Expr;
 	private sealed record DynamicMethodCallExpr(Expr Object, Expr Name, List<Expr> Args) : Expr;
 	private sealed record NewObjectExpr(string TypeName, List<Expr> Args) : Expr;
-	private sealed record NewArrayExpr(List<int> Dimensions) : Expr;
+	private sealed record NewArrayExpr(List<Expr> Dimensions) : Expr;
 	private sealed record LambdaExpr(string Name, List<Expr> Args, List<Stmt> Body) : Expr;
 	private sealed record ArrayLiteralExpr(List<Expr> Values) : Expr;
 	private sealed record FunctionEntry(string Name, int OpIndex, int JmpLoc);
