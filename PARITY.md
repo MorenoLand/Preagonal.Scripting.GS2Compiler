@@ -2,6 +2,9 @@
 
 Current advanced fixture score: 96 / 155 byte-for-byte hashes, 105 / 155 byte sizes.
 
+Locked direct builtins:
+- `setarray(object, size)` emits `OP_SETARRAY` (`39`) directly and does not add `setarray` to the string table.
+
 Locked advanced parity fixtures:
 - `tests/scripts/advanced/g2k1/weaponApple Seeds.gs2`
 - `tests/scripts/advanced/g2k1/weaponBasket.gs2`
