@@ -3,7 +3,20 @@
 	<PropertyGroup>
 		<ImplicitUsings>false</ImplicitUsings>
 		<Nullable>enable</Nullable>
+		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
 		<LangVersion>latest</LangVersion>
+		<Title>GS2Compiler</Title>
+		<Authors>Preagonal</Authors>
+		<Copyright>Preagonal 2026</Copyright>
+		<PackageProjectUrl>https://github.com/Preagonal/Preagonal.Scripting.GS2Compiler</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/Preagonal/Preagonal.Scripting.GS2Compiler</RepositoryUrl>
+		<PackageId>Preagonal.Scripting.GS2Compiler</PackageId>
+		<Description>GS2 compiler compatible with Preagonal.Scripting.GS2Engine.</Description>
+		<PackageTags>gs2;graal;compiler;preagonal</PackageTags>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<AssemblyVersion>1.0.0</AssemblyVersion>
+		<FileVersion>1.0.0</FileVersion>
+		<NeutralLanguage>en-US</NeutralLanguage>
 		<TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 		<IsAotCompatible>true</IsAotCompatible>
@@ -12,6 +25,10 @@
 	<ItemGroup>
 		<PackageReference Include="Antlr4BuildTasks" Version="12.14.0" PrivateAssets="all" />
 		<PackageReference Include="Antlr4.Runtime.Standard" Version="4.13.1" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="..\README.md" Pack="true" PackagePath="\" />
 	</ItemGroup>
 
 	<ItemGroup>
