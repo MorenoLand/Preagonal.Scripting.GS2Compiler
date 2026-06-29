@@ -1166,14 +1166,14 @@ internal static class GS2Compiler
 					if (call.Name == "length" && call.Args.Count == 0)
 					{
 						Emit(call.Object);
-						if (NeedsStringConversion(call.Object)) _bytecode.Emit(Op.ConvToString);
+						_bytecode.Emit(Op.ConvToString);
 						_bytecode.Emit(Op.ObjLength);
 						break;
 					}
 					if (call.Name == "substring")
 					{
 						Emit(call.Object);
-						if (NeedsStringConversion(call.Object)) _bytecode.Emit(Op.ConvToString);
+						_bytecode.Emit(Op.ConvToString);
 						foreach (var arg in call.Args)
 						{
 							Emit(arg);
@@ -1185,7 +1185,7 @@ internal static class GS2Compiler
 					if (call.Name == "pos")
 					{
 						Emit(call.Object);
-						if (NeedsStringConversion(call.Object)) _bytecode.Emit(Op.ConvToString);
+						_bytecode.Emit(Op.ConvToString);
 						foreach (var arg in call.Args)
 						{
 							Emit(arg);
@@ -1197,7 +1197,7 @@ internal static class GS2Compiler
 					if (call.Name == "charat")
 					{
 						Emit(call.Object);
-						if (NeedsStringConversion(call.Object)) _bytecode.Emit(Op.ConvToString);
+						_bytecode.Emit(Op.ConvToString);
 						foreach (var arg in call.Args)
 						{
 							Emit(arg);
@@ -1209,7 +1209,7 @@ internal static class GS2Compiler
 					if (call.Name is "starts" or "ends")
 					{
 						Emit(call.Object);
-						if (NeedsStringConversion(call.Object)) _bytecode.Emit(Op.ConvToString);
+						_bytecode.Emit(Op.ConvToString);
 						foreach (var arg in call.Args) Emit(arg);
 						_bytecode.Emit(call.Name == "starts" ? Op.ObjStarts : Op.ObjEnds);
 						break;
@@ -1217,14 +1217,14 @@ internal static class GS2Compiler
 					if (call.Name == "trim" && call.Args.Count == 0)
 					{
 						Emit(call.Object);
-						if (NeedsStringConversion(call.Object)) _bytecode.Emit(Op.ConvToString);
+						_bytecode.Emit(Op.ConvToString);
 						_bytecode.Emit(Op.ObjTrim);
 						break;
 					}
 					if (call.Name == "tokenize")
 					{
 						Emit(call.Object);
-						if (NeedsStringConversion(call.Object)) _bytecode.Emit(Op.ConvToString);
+						_bytecode.Emit(Op.ConvToString);
 						if (call.Args.Count == 0)
 						{
 							_bytecode.Emit(Op.TypeString);
@@ -1237,7 +1237,7 @@ internal static class GS2Compiler
 					if (call.Name == "positions")
 					{
 						Emit(call.Object);
-						if (NeedsStringConversion(call.Object)) _bytecode.Emit(Op.ConvToString);
+						_bytecode.Emit(Op.ConvToString);
 						foreach (var arg in call.Args)
 						{
 							Emit(arg);
