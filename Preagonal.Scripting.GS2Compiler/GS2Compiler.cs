@@ -1091,6 +1091,15 @@ internal static class GS2Compiler
 					}
 					_bytecode.Emit(Op.ObjSize);
 					break;
+				case CallExpr { Name: "waitfor" } call:
+					for (var i = 0; i < call.Args.Count; ++i)
+					{
+						Emit(call.Args[i]);
+						if (i < 2 && NeedsStringConversion(call.Args[i])) _bytecode.Emit(Op.ConvToString);
+						else if (i == 2 && !IsNumberExpr(call.Args[i])) _bytecode.Emit(Op.ConvToFloat);
+					}
+					_bytecode.Emit(Op.WaitFor);
+					break;
 				case CallExpr { Name: "sleep" } call:
 					for (var i = 0; i < call.Args.Count; ++i)
 					{
@@ -1860,6 +1869,7 @@ internal static class GS2Compiler
 		Sleep = 8,
 		CmdCall = 9,
 		Jmp = 10,
+		WaitFor = 11,
 		TypeNumber = 20,
 		TypeString = 21,
 		TypeVar = 22,

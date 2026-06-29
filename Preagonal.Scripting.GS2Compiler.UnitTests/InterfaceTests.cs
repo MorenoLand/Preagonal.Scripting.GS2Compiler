@@ -344,6 +344,25 @@ public class InterfaceTests
 	}
 
 	[Fact]
+	public void Given_waitfor_call_When_compiling_Then_direct_opcode_is_emitted()
+	{
+		const string scriptText =
+			"""
+						function onCreated() {
+						  temp.done = waitfor(this, "Done", 1);
+						}
+			""";
+
+		var result = Interface.CompileCode(scriptText, withHeader: false);
+		var strings = ReadStringTable(result.ByteCode);
+		var code = ReadBytecodeSegment(result.ByteCode);
+
+		Assert.True(result.Success);
+		Assert.Contains((byte)11, code);
+		Assert.DoesNotContain("waitfor", strings);
+	}
+
+	[Fact]
 	public void Given_size_method_call_When_compiling_Then_object_size_opcode_is_emitted()
 	{
 		const string scriptText =
