@@ -1091,6 +1091,11 @@ internal static class GS2Compiler
 					}
 					_bytecode.Emit(Op.MakeVar);
 					break;
+				case CallExpr { Name: "format" } call:
+					_bytecode.Emit(Op.TypeArray);
+					for (var i = call.Args.Count - 1; i >= 0; --i) Emit(call.Args[i]);
+					_bytecode.Emit(Op.Format);
+					break;
 				case CallExpr call:
 					_bytecode.Emit(Op.TypeArray);
 					for (var i = call.Args.Count - 1; i >= 0; --i) Emit(call.Args[i]);
@@ -1864,6 +1869,7 @@ internal static class GS2Compiler
 		InObj = 81,
 		ObjIndex = 82,
 		ObjType = 83,
+		Format = 84,
 		Abs = 86,
 		Int = 85,
 		Random = 87,
