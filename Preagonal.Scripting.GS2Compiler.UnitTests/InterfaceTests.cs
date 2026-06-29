@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace Preagonal.Scripting.GS2Compiler.UnitTests;
 
 public class InterfaceTests
@@ -224,4 +226,52 @@ public class InterfaceTests
 		Assert.True(result.Success);
 		Assert.NotEmpty(result.ByteCode);
 	}
+
+	[Fact]
+	public void Given_universe_object_function_When_compiling_Then_function_table_matches_reference_name()
+	{
+		const string scriptText =
+			"""
+						function universe.onServerListerConnect() {
+						  return;
+						}
+			""";
+
+		var result = Interface.CompileCode(scriptText, withHeader: false);
+		var functionNames = ReadFunctionNames(result.ByteCode);
+
+		Assert.True(result.Success);
+		Assert.Contains("onServerListerConnect,universe.onServerListerConnect", functionNames);
+	}
+
+	private static List<string> ReadFunctionNames(byte[] bytecode)
+	{
+		var offset = 0;
+		while (offset + 8 <= bytecode.Length)
+		{
+			var type = ReadInt(bytecode, offset);
+			var length = ReadInt(bytecode, offset + 4);
+			offset += 8;
+			if (type == 2) return ReadFunctionSegment(bytecode, offset, length);
+			offset += length;
+		}
+		return [];
+	}
+
+	private static List<string> ReadFunctionSegment(byte[] bytecode, int offset, int length)
+	{
+		List<string> names = [];
+		var end = offset + length;
+		while (offset + 4 < end)
+		{
+			offset += 4;
+			var start = offset;
+			while (offset < end && bytecode[offset] != 0) offset++;
+			names.Add(Encoding.UTF8.GetString(bytecode, start, offset - start));
+			offset++;
+		}
+		return names;
+	}
+
+	private static int ReadInt(byte[] bytes, int offset) => bytes[offset] << 24 | bytes[offset + 1] << 16 | bytes[offset + 2] << 8 | bytes[offset + 3];
 }

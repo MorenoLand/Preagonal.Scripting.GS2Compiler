@@ -595,6 +595,7 @@ internal static class GS2Compiler
 			var functionName = node.Public ? "public." : "";
 			if (!string.IsNullOrEmpty(node.ObjectName)) functionName += node.ObjectName + ".";
 			functionName += node.Name;
+			if (node.ObjectName == "universe") functionName = (node.Public ? "public." : "") + node.Name + "," + functionName;
 			_bytecode.AddFunction(functionName, _bytecode.OpIndex, 0);
 			_bytecode.Emit(Op.TypeArray);
 			for (var i = node.Args.Count - 1; i >= 0; --i) Emit(node.Args[i]);
