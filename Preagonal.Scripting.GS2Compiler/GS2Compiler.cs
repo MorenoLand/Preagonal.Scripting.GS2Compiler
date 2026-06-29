@@ -679,7 +679,7 @@ internal static class GS2Compiler
 				if (!discardCallReturn) { }
 				else if (exprStatement.Expression is CallExpr call && NonReturningBuiltInCalls.Contains(call.Name)) { }
 				else if (exprStatement.Expression is MethodCallExpr methodCall && NonReturningMethodCalls.Contains(methodCall.Name)) { }
-				else if (exprStatement.Expression is CallExpr or MethodCallExpr) _bytecode.Emit(Op.IndexDec);
+				else if (exprStatement.Expression is CallExpr or MethodCallExpr or DynamicMethodCallExpr) _bytecode.Emit(Op.IndexDec);
 			}
 			else if (statement is ReturnStmt returnStatement)
 			{
@@ -1007,6 +1007,13 @@ internal static class GS2Compiler
 				case TernaryExpr ternary:
 					EmitTernary(ternary);
 					break;
+				case BinaryExpr { Op: "@", Left: var left, Right: var right } when _dynamicMethodName:
+					Emit(left);
+					if (left is StringExpr || NeedsStringConversion(left)) _bytecode.Emit(Op.ConvToString);
+					Emit(right);
+					if (right is not StringExpr) _bytecode.Emit(Op.ConvToString);
+					_bytecode.Emit(Op.Join);
+					break;
 				case BinaryExpr { Op: " " or "\n" or "\t", Left: var left, Right: var right } spacedConcat:
 					Emit(left);
 					if (NeedsStringConversion(left)) _bytecode.Emit(Op.ConvToString);
@@ -1295,9 +1302,16 @@ internal static class GS2Compiler
 					Emit(call.Object);
 					if (NeedsObjectConversion(call.Object) || call.Object is ArrayIndexExpr) _bytecode.Emit(Op.ConvToObject);
 					_dynamicMethodName = true;
-					Emit(call.Name);
+					if (call.Name is StringCastExpr { Expression: IdentifierExpr or MemberExpr { Object: IdentifierExpr { Name: "temp" } } } callNameCast)
+					{
+						Emit(callNameCast.Expression);
+						if (NeedsNumericConversion(callNameCast.Expression)) _bytecode.Emit(Op.ConvToFloat);
+						_bytecode.Emit(Op.Add);
+					}
+					else if (call.Name is StringCastExpr { Expression: BinaryExpr { Op: "@" } nameConcat }) Emit(nameConcat);
+					else Emit(call.Name);
 					_dynamicMethodName = false;
-					if (NeedsStringConversion(call.Name)) _bytecode.Emit(Op.ConvToString);
+					if (NeedsStringConversion(call.Name) && call.Name is not BinaryExpr { Op: "@" }) _bytecode.Emit(Op.ConvToString);
 					_bytecode.Emit(Op.MemberAccess);
 					_bytecode.Emit(Op.Call);
 					break;
