@@ -345,6 +345,28 @@ public class InterfaceTests
 		Assert.DoesNotContain("pos", strings);
 	}
 
+	[Fact]
+	public void Given_starts_and_ends_method_calls_When_compiling_Then_direct_opcodes_are_emitted()
+	{
+		const string scriptText =
+			"""
+						function onCreated() {
+						  temp.a = player.account.starts("A");
+						  temp.b = player.account.ends("Z");
+						}
+			""";
+
+		var result = Interface.CompileCode(scriptText, withHeader: false);
+		var strings = ReadStringTable(result.ByteCode);
+		var code = ReadBytecodeSegment(result.ByteCode);
+
+		Assert.True(result.Success);
+		Assert.Contains((byte)116, code);
+		Assert.Contains((byte)117, code);
+		Assert.DoesNotContain("starts", strings);
+		Assert.DoesNotContain("ends", strings);
+	}
+
 	private static List<string> ReadFunctionNames(byte[] bytecode)
 	{
 		var offset = 0;

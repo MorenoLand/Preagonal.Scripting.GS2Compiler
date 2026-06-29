@@ -1128,6 +1128,14 @@ internal static class GS2Compiler
 						_bytecode.Emit(Op.ObjPos);
 						break;
 					}
+					if (call.Name is "starts" or "ends")
+					{
+						Emit(call.Object);
+						if (NeedsStringConversion(call.Object)) _bytecode.Emit(Op.ConvToString);
+						foreach (var arg in call.Args) Emit(arg);
+						_bytecode.Emit(call.Name == "starts" ? Op.ObjStarts : Op.ObjEnds);
+						break;
+					}
 					_bytecode.Emit(Op.TypeArray);
 					for (var i = call.Args.Count - 1; i >= 0; --i) Emit(call.Args[i]);
 					Emit(call.Object);
@@ -1757,6 +1765,8 @@ internal static class GS2Compiler
 		ObjPos = 112,
 		Join = 113,
 		ObjSubstr = 115,
+		ObjStarts = 116,
+		ObjEnds = 117,
 		Translate = 119,
 		ObjSize = 130,
 		Array = 131,
