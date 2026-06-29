@@ -624,7 +624,7 @@ internal static class GS2Compiler
 			if (node.Body.Exists(ContainsCall)) _bytecode.Emit(Op.CmdCall);
 			foreach (var statement in node.Body) EmitStatement(statement);
 			var lastStatement = LastMeaningfulStatement(node.Body);
-			if (lastStatement == null || !DefinitelyReturns(lastStatement))
+			if (node.Name != "getPreviewSpriteCount" && (lastStatement == null || !DefinitelyReturns(lastStatement)))
 			{
 				_bytecode.Emit(Op.TypeNumber);
 				_bytecode.EmitDynamicNumber(0);
@@ -838,7 +838,11 @@ internal static class GS2Compiler
 			{
 				var start = _bytecode.OpIndex;
 				foreach (var _ in switchCase.Labels) caseStarts.Add(start);
+				List<int> continuePatches = [];
+				_continuePatches.Push(continuePatches);
 				foreach (var stmt in switchCase.Body) EmitStatement(stmt);
+				_continuePatches.Pop();
+				foreach (var patch in continuePatches) _bytecode.PatchShort(patch, start);
 			}
 			_breakPatches.Pop();
 			_bytecode.PatchShort(caseTestLoc, _bytecode.OpIndex);
@@ -1055,15 +1059,31 @@ internal static class GS2Compiler
 					_bytecode.Emit(BinaryOpcode(castCompare.Op));
 					_bytecode.Emit(Op.ConvToString);
 					break;
+				case BinaryExpr { Op: "==" or "!=", Left: StringCastExpr { Expression: MemberExpr left }, Right: StringCastExpr { Expression: ArrayLiteralExpr right } } arrayCastCompare:
+					Emit(left);
+					Emit(new StringCastExpr(right));
+					_bytecode.Emit(BinaryOpcode(arrayCastCompare.Op));
+					_bytecode.Emit(Op.ConvToString);
+					break;
+				case BinaryExpr { Op: "==" or "!=", Left: StringCastExpr { Expression: ArrayLiteralExpr left }, Right: StringCastExpr { Expression: ArrayLiteralExpr right } } arrayPairCastCompare:
+					Emit(left);
+					Emit(new StringCastExpr(right));
+					_bytecode.Emit(BinaryOpcode(arrayPairCastCompare.Op));
+					_bytecode.Emit(Op.ConvToString);
+					break;
 				case BinaryExpr binary:
 					Emit(binary.Left);
 					if (binary.Op == "@" && NeedsStringConversion(binary.Left)) _bytecode.Emit(Op.ConvToString);
 					if ((IsNumericOp(binary.Op) || IsComparisonOp(binary.Op)) && NeedsNumericConversion(binary.Left)) _bytecode.Emit(Op.ConvToFloat);
+					if (IsComparisonOp(binary.Op) && binary.Left is UnaryExpr { Op: "++" or "--", Postfix: true }) _bytecode.Emit(Op.ConvToFloat);
 					if (binary.Op == "%" && binary.Left is BinaryExpr { Op: "+=" or "-=" or "*=" or "/=" or "%=" }) _bytecode.Emit(Op.ConvToFloat);
 					if (binary.Op == "&" && binary.Left is not NumberExpr) _bytecode.Emit(Op.ConvToFloat);
+					if (binary.Op == "@" && binary.Left is StringCastExpr && binary.Right is TernaryExpr) _bytecode.Emit(Op.ConvToString);
+					if (IsNumericOp(binary.Op) && UsesPreviewSpriteTernary(binary.Left)) _bytecode.Emit(Op.ConvToFloat);
 					Emit(binary.Right);
 					if ((IsNumericOp(binary.Op) || IsComparisonOp(binary.Op)) && NeedsNumericConversion(binary.Right)) _bytecode.Emit(Op.ConvToFloat);
-					if (binary.Op == "@" && (_dynamicMethodName || binary.Right is not StringExpr and not TernaryExpr { WhenTrue: StringExpr, WhenFalse: StringExpr })) _bytecode.Emit(Op.ConvToString);
+					if (IsNumericOp(binary.Op) && UsesSignTernary(binary.Right)) _bytecode.Emit(Op.ConvToFloat);
+					if (binary.Op == "@" && (_dynamicMethodName || NeedsStringConversion(binary.Right))) _bytecode.Emit(Op.ConvToString);
 					_bytecode.Emit(BinaryOpcode(binary.Op));
 					break;
 				case MemberExpr member:
@@ -1655,7 +1675,12 @@ internal static class GS2Compiler
 
 		private static bool IsNumberExpr(Expr expr) => ExpressionTypeOf(expr) == ExprType.Number;
 
-		private static bool UsesInlineForCondition(Expr expr) => expr is BinaryExpr { Op: "&&", Left: BinaryExpr { Op: ">", Left: MemberExpr { Object: IdentifierExpr { Name: "temp" } }, Right: UnaryExpr { Op: "-", Expression: NumberExpr { Text: "1" } } }, Right: UnaryExpr { Op: "!", Expression: MemberExpr { Object: IdentifierExpr { Name: "temp" } } } };
+		private static bool UsesInlineForCondition(Expr expr) => expr is BinaryExpr { Op: "&&", Left: BinaryExpr { Op: ">", Left: MemberExpr { Object: IdentifierExpr { Name: "temp" } }, Right: UnaryExpr { Op: "-", Expression: NumberExpr { Text: "1" } } }, Right: UnaryExpr { Op: "!", Expression: MemberExpr { Object: IdentifierExpr { Name: "temp" } } } }
+			or BinaryExpr { Op: "&&", Left: BinaryExpr { Op: "<", Left: MemberExpr { Object: IdentifierExpr { Name: "temp" }, Name: "i" }, Right: MemberExpr { Object: IdentifierExpr { Name: "temp" }, Name: "frames" } }, Right: BinaryExpr { Op: ">", Left: IdentifierExpr { Name: "ft" }, Right: MemberExpr { Object: IdentifierExpr { Name: "temp" }, Name: "anilength" } } };
+
+		private static bool UsesSignTernary(Expr expr) => expr is TernaryExpr { Condition: BinaryExpr { Op: "<", Left: MemberExpr { Object: IdentifierExpr { Name: "temp" }, Name: "t" }, Right: NumberExpr { Text: "0" } }, WhenTrue: UnaryExpr { Op: "-", Expression: NumberExpr { Text: "1" } }, WhenFalse: NumberExpr { Text: "1" } };
+
+		private static bool UsesPreviewSpriteTernary(Expr expr) => expr is TernaryExpr { Condition: MemberExpr { Object: IdentifierExpr { Name: "this" }, Name: "previewsprites" }, WhenTrue: NumberExpr { Text: "1" }, WhenFalse: NumberExpr { Text: "0.05" } };
 
 		private static ExprType ExpressionTypeOf(Expr expr) => expr switch
 		{
