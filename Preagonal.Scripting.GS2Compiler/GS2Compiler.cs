@@ -598,7 +598,7 @@ internal static class GS2Compiler
 			if (!string.IsNullOrEmpty(node.ObjectName)) functionName += node.ObjectName + ".";
 			functionName += node.Name;
 			if (node.ObjectName == "universe") functionName = (node.Public ? "public." : "") + node.Name + "," + functionName;
-			_bytecode.AddFunction(functionName, _bytecode.OpIndex, 0);
+			var addedFunction = _bytecode.AddFunction(functionName, _bytecode.OpIndex, 0);
 			_bytecode.Emit(Op.TypeArray);
 			for (var i = node.Args.Count - 1; i >= 0; --i) Emit(node.Args[i]);
 			_bytecode.Emit(Op.FuncParamsEnd);
@@ -611,7 +611,10 @@ internal static class GS2Compiler
 				_bytecode.EmitDynamicNumber(0);
 				_bytecode.Emit(Op.Ret);
 			}
-			if (patchToFinal) _bytecode.AddPrejumpPatch(jmpLoc);
+			if (patchToFinal)
+			{
+				if (addedFunction) _bytecode.AddPrejumpPatch(jmpLoc);
+			}
 			else _bytecode.PatchShort(jmpLoc, _bytecode.OpIndex);
 		}
 
@@ -1535,9 +1538,11 @@ internal static class GS2Compiler
 			return index;
 		}
 
-		public void AddFunction(string name, int opIndex, int jmpLoc)
+		public bool AddFunction(string name, int opIndex, int jmpLoc)
 		{
-			if (_functionSet.Add(name)) _functions.Add(new(name, opIndex, jmpLoc));
+			if (!_functionSet.Add(name)) return false;
+			_functions.Add(new(name, opIndex, jmpLoc));
+			return true;
 		}
 
 		public void AddPrejumpPatch(int pos) => _prejumpPatches.Add(pos);
