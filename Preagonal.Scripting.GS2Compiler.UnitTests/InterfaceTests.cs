@@ -289,6 +289,31 @@ public class InterfaceTests
 	}
 
 	[Fact]
+	public void Given_object_query_method_calls_When_compiling_Then_direct_opcodes_are_emitted()
+	{
+		const string scriptText =
+			"""
+						function onCreated() {
+						  temp.posi = this.items.index("a");
+						  temp.kind = this.items.type();
+						  temp.tail = this.items.subarray(1);
+						}
+			""";
+
+		var result = Interface.CompileCode(scriptText, withHeader: false);
+		var strings = ReadStringTable(result.ByteCode);
+		var code = ReadBytecodeSegment(result.ByteCode);
+
+		Assert.True(result.Success);
+		Assert.Contains((byte)82, code);
+		Assert.Contains((byte)83, code);
+		Assert.Contains((byte)135, code);
+		Assert.DoesNotContain("index", strings);
+		Assert.DoesNotContain("type", strings);
+		Assert.DoesNotContain("subarray", strings);
+	}
+
+	[Fact]
 	public void Given_length_method_call_When_compiling_Then_object_length_opcode_is_emitted()
 	{
 		const string scriptText =

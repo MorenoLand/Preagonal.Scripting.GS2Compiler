@@ -1098,6 +1098,21 @@ internal static class GS2Compiler
 						_bytecode.Emit(Op.ObjSize);
 						break;
 					}
+					if (call.Name == "type" && call.Args.Count == 0)
+					{
+						Emit(call.Object);
+						if (NeedsObjectConversion(call.Object)) _bytecode.Emit(Op.ConvToObject);
+						_bytecode.Emit(Op.ObjType);
+						break;
+					}
+					if (call.Name == "index")
+					{
+						Emit(call.Object);
+						if (NeedsObjectConversion(call.Object)) _bytecode.Emit(Op.ConvToObject);
+						foreach (var arg in call.Args) Emit(arg);
+						_bytecode.Emit(Op.ObjIndex);
+						break;
+					}
 					if (call.Name == "length" && call.Args.Count == 0)
 					{
 						Emit(call.Object);
@@ -1179,6 +1194,13 @@ internal static class GS2Compiler
 							if (NeedsStringConversion(arg)) _bytecode.Emit(Op.ConvToString);
 						}
 						_bytecode.Emit(Op.ObjPositions);
+						break;
+					}
+					if (call.Name == "subarray")
+					{
+						for (var i = call.Args.Count - 1; i >= 0; --i) Emit(call.Args[i]);
+						Emit(call.Object);
+						_bytecode.Emit(Op.ObjSubarray);
 						break;
 					}
 					if (call.Name == "clear" && call.Args.Count == 0)
@@ -1831,6 +1853,8 @@ internal static class GS2Compiler
 		BitInvert = 79,
 		InRange = 80,
 		InObj = 81,
+		ObjIndex = 82,
+		ObjType = 83,
 		Abs = 86,
 		Int = 85,
 		Random = 87,
@@ -1860,6 +1884,7 @@ internal static class GS2Compiler
 		ArrayAssign = 132,
 		ArrayMultiDim = 133,
 		ArrayMultiDimAssign = 134,
+		ObjSubarray = 135,
 		ObjAddString = 136,
 		ObjDeleteString = 137,
 		ObjRemoveString = 138,
