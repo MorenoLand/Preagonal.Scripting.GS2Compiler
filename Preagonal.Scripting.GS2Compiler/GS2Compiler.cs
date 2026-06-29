@@ -413,8 +413,8 @@ internal static class GS2Compiler
 				}
 				break;
 			}
-			if (Match(TokenType.Increment)) expr = new UnaryExpr("++", expr);
-			else if (Match(TokenType.Decrement)) expr = new UnaryExpr("--", expr);
+			if (Match(TokenType.Increment)) expr = new UnaryExpr("++", expr, true);
+			else if (Match(TokenType.Decrement)) expr = new UnaryExpr("--", expr, true);
 			return expr;
 		}
 
@@ -620,13 +620,19 @@ internal static class GS2Compiler
 
 		private void Emit(Expr expr) => Emit(expr, false, true, 0);
 
+		private void EmitUnusedExpression(Expr expr)
+		{
+			var preservePostfixValue = expr is not UnaryExpr { Op: "++" or "--", Postfix: true };
+			Emit(expr, false, true, 0, false, false, preservePostfixValue);
+		}
+
 		public void EmitStatement(Stmt statement) => EmitStatement(statement, true);
 
 		private void EmitStatement(Stmt statement, bool discardCallReturn)
 		{
 			if (statement is ExprStmt exprStatement)
 			{
-				Emit(exprStatement.Expression);
+				EmitUnusedExpression(exprStatement.Expression);
 				if (!discardCallReturn) { }
 				else if (exprStatement.Expression is CallExpr call && NonReturningBuiltInCalls.Contains(call.Name)) { }
 				else if (exprStatement.Expression is MethodCallExpr methodCall && NonReturningMethodCalls.Contains(methodCall.Name)) { }
@@ -678,7 +684,7 @@ internal static class GS2Compiler
 
 		private void EmitFor(ForStmt statement)
 		{
-			if (statement.Init != null) Emit(statement.Init);
+			if (statement.Init != null) EmitUnusedExpression(statement.Init);
 			var start = _bytecode.OpIndex;
 			List<int> conditionFailPatches = [];
 			List<int> conditionSuccessPatches = [];
@@ -696,7 +702,7 @@ internal static class GS2Compiler
 			_bytecode.Emit(Op.CmdCall);
 			foreach (var stmt in statement.Body) EmitStatement(stmt);
 			foreach (var patch in continuePatches) _bytecode.PatchShort(patch, _bytecode.OpIndex);
-			if (statement.Post != null) Emit(statement.Post);
+			if (statement.Post != null) EmitUnusedExpression(statement.Post);
 			_bytecode.Emit(Op.SetIndex);
 			_bytecode.EmitDynamicNumber(start);
 			_continuePatches.Pop();
@@ -851,7 +857,7 @@ internal static class GS2Compiler
 			_newObjectCount--;
 		}
 
-		private void Emit(Expr expr, bool copyAssignmentTarget, bool logicalInline, int suppressedLogicalPatchOffset, bool controlLogical = false, bool negatedLogical = false)
+		private void Emit(Expr expr, bool copyAssignmentTarget, bool logicalInline, int suppressedLogicalPatchOffset, bool controlLogical = false, bool negatedLogical = false, bool preservePostfixValue = true)
 		{
 			switch (expr)
 			{
@@ -1090,6 +1096,28 @@ internal static class GS2Compiler
 					Emit(invertValue);
 					if (!IsNumberExpr(invertValue)) _bytecode.Emit(Op.ConvToFloat);
 					_bytecode.Emit(Op.BitInvert);
+					break;
+				case UnaryExpr { Op: "++", Expression: var incValue, Postfix: true }:
+					Emit(incValue);
+					if (preservePostfixValue)
+					{
+						_bytecode.Emit(Op.CopyLastOp);
+						_bytecode.Emit(Op.ConvToFloat);
+						_bytecode.Emit(Op.SwapLastOps);
+					}
+					_bytecode.Emit(Op.Inc);
+					_bytecode.Emit(Op.IndexDec);
+					break;
+				case UnaryExpr { Op: "--", Expression: var decValue, Postfix: true }:
+					Emit(decValue);
+					if (preservePostfixValue)
+					{
+						_bytecode.Emit(Op.CopyLastOp);
+						_bytecode.Emit(Op.ConvToFloat);
+						_bytecode.Emit(Op.SwapLastOps);
+					}
+					_bytecode.Emit(Op.Dec);
+					_bytecode.Emit(Op.IndexDec);
 					break;
 				case UnaryExpr { Op: "++", Expression: var incValue }:
 					Emit(incValue);
@@ -1924,7 +1952,7 @@ internal static class GS2Compiler
 	private sealed record BinaryExpr(Expr Left, string Op, Expr Right) : Expr;
 	private sealed record InExpr(Expr Expression, Expr Lower, Expr? Upper) : Expr;
 	private sealed record TernaryExpr(Expr Condition, Expr WhenTrue, Expr WhenFalse) : Expr;
-	private sealed record UnaryExpr(string Op, Expr Expression) : Expr;
+	private sealed record UnaryExpr(string Op, Expr Expression, bool Postfix = false) : Expr;
 	private sealed record StringCastExpr(Expr Expression) : Expr;
 	private sealed record CastExpr(string Type, Expr Expression) : Expr;
 	private sealed record MemberExpr(Expr Object, string Name) : Expr;
