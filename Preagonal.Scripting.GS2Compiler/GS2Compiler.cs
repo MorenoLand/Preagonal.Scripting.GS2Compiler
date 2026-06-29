@@ -903,8 +903,20 @@ internal static class GS2Compiler
 					_bytecode.Emit(Op.Assign);
 					break;
 				case BinaryExpr { Op: "&&" or "||" } logical:
+					List<int>? localSuccessPatches = null;
+					var localSuccessStart = 0;
+					if (logical.Op == "&&" && controlLogical && _conditionSuccessPatches.Count > 0)
+					{
+						localSuccessPatches = _conditionSuccessPatches.Peek();
+						localSuccessStart = localSuccessPatches.Count;
+					}
 					Emit(logical.Left, false, false, logical.Left is BinaryExpr { Op: "&&" or "||" } ? (controlLogical || negatedLogical) && logical.Op == "||" ? 6 : 1 : 0, controlLogical, negatedLogical);
 					if (!IsBooleanExpr(logical.Left)) _bytecode.Emit(Op.ConvToFloat);
+					if (localSuccessPatches != null)
+					{
+						for (var i = localSuccessStart; i < localSuccessPatches.Count; ++i) _bytecode.PatchShort(localSuccessPatches[i], _bytecode.OpIndex);
+						localSuccessPatches.RemoveRange(localSuccessStart, localSuccessPatches.Count - localSuccessStart);
+					}
 					_bytecode.Emit(logical.Op == "&&" && controlLogical ? Op.If : logical.Op == "&&" ? Op.And : Op.Or);
 					var loc = _bytecode.EmitNumberOperandPlaceholder();
 					Emit(logical.Right, false, false, 0, controlLogical, negatedLogical);
