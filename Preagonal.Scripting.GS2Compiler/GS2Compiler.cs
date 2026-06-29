@@ -901,7 +901,7 @@ internal static class GS2Compiler
 			_newObjectCount--;
 		}
 
-		private void Emit(Expr expr, bool copyAssignmentTarget, bool logicalInline, int suppressedLogicalPatchOffset, bool controlLogical = false, bool negatedLogical = false, bool preservePostfixValue = true)
+		private void Emit(Expr expr, bool copyAssignmentTarget, bool logicalInline, int suppressedLogicalPatchOffset, bool controlLogical = false, bool negatedLogical = false, bool preservePostfixValue = true, bool leftNegatedControlAnd = false)
 		{
 			switch (expr)
 			{
@@ -971,7 +971,8 @@ internal static class GS2Compiler
 						localFailPatches = _conditionFailPatches.Peek();
 						localFailStart = localFailPatches.Count;
 					}
-					Emit(logical.Left, false, false, logical.Left is BinaryExpr { Op: "&&" or "||" } ? (controlLogical || negatedLogical) && logical.Op == "||" ? 6 : 1 : 0, controlLogical, negatedLogical);
+					var passNegatedControlAnd = controlLogical && logical.Left is UnaryExpr { Op: "!", Expression: BinaryExpr { Op: "&&" } };
+					Emit(logical.Left, false, false, logical.Left is BinaryExpr { Op: "&&" or "||" } ? (controlLogical || negatedLogical) && logical.Op == "||" ? 6 : 1 : 0, controlLogical, negatedLogical, true, passNegatedControlAnd);
 					if (!IsBooleanExpr(logical.Left)) _bytecode.Emit(Op.ConvToFloat);
 					if (localSuccessPatches != null)
 					{
@@ -1144,7 +1145,7 @@ internal static class GS2Compiler
 					_bytecode.Emit(Op.UnarySub);
 					break;
 				case UnaryExpr { Op: "!", Expression: var notValue }:
-					Emit(notValue, false, false, 0, false, true);
+					Emit(notValue, false, false, 0, leftNegatedControlAnd, true);
 					if (!IsBooleanExpr(notValue)) _bytecode.Emit(Op.ConvToFloat);
 					_bytecode.Emit(Op.Not);
 					break;
