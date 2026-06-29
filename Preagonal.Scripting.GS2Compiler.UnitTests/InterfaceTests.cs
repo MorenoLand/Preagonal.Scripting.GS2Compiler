@@ -285,6 +285,24 @@ public class InterfaceTests
 	}
 
 	[Fact]
+	public void Given_unary_multiply_expression_When_compiling_Then_negation_follows_multiply()
+	{
+		const string scriptText =
+			"""
+						function onCreated() {
+						  temp.da = 1;
+						  temp.dy = -sin(temp.da) * 4;
+						}
+			""";
+
+		var result = Interface.CompileCode(scriptText, withHeader: false);
+		var code = ReadBytecodeSegment(result.ByteCode);
+
+		Assert.True(result.Success);
+		Assert.True(Contains([33, 20, 243, 4, 62, 69], code));
+	}
+
+	[Fact]
 	public void Given_makevar_call_When_compiling_Then_direct_opcode_is_emitted()
 	{
 		const string scriptText =
@@ -669,4 +687,20 @@ public class InterfaceTests
 	}
 
 	private static int ReadInt(byte[] bytes, int offset) => bytes[offset] << 24 | bytes[offset + 1] << 16 | bytes[offset + 2] << 8 | bytes[offset + 3];
+
+	private static bool Contains(byte[] expected, byte[] actual)
+	{
+		for (var i = 0; i <= actual.Length - expected.Length; i++)
+		{
+			var matched = true;
+			for (var j = 0; j < expected.Length; j++)
+			{
+				if (actual[i + j] == expected[j]) continue;
+				matched = false;
+				break;
+			}
+			if (matched) return true;
+		}
+		return false;
+	}
 }
