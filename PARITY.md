@@ -1,6 +1,6 @@
 # GS2 parity progress
 
-Current advanced fixture score: 153 / 155 byte-for-byte hashes, 153 / 155 byte sizes.
+Current advanced fixture score: 153 / 155 byte-for-byte hashes, 154 / 155 byte sizes.
 
 Locked direct builtins:
 - `setarray(object, size)` emits `OP_SETARRAY` (`39`) directly and does not add `setarray` to the string table.

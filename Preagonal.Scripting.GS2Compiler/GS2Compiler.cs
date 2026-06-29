@@ -705,7 +705,8 @@ internal static class GS2Compiler
 			List<int> conditionSuccessPatches = [];
 			_conditionFailPatches.Push(conditionFailPatches);
 			_conditionSuccessPatches.Push(conditionSuccessPatches);
-			Emit(statement.Condition, false, false, 0, true);
+			if (UsesInlineForCondition(statement.Condition)) Emit(statement.Condition);
+			else Emit(statement.Condition, false, false, 0, true);
 			_conditionSuccessPatches.Pop();
 			_conditionFailPatches.Pop();
 			if (!IsBooleanExpr(statement.Condition) && NeedsNumericConversion(statement.Condition)) _bytecode.Emit(Op.ConvToFloat);
@@ -733,7 +734,8 @@ internal static class GS2Compiler
 			List<int> conditionSuccessPatches = [];
 			_conditionFailPatches.Push(conditionFailPatches);
 			_conditionSuccessPatches.Push(conditionSuccessPatches);
-			Emit(statement.Condition, false, false, 0, true);
+			if (UsesInlineForCondition(statement.Condition)) Emit(statement.Condition);
+			else Emit(statement.Condition, false, false, 0, true);
 			_conditionSuccessPatches.Pop();
 			_conditionFailPatches.Pop();
 			if (!IsBooleanExpr(statement.Condition) && NeedsNumericConversion(statement.Condition)) _bytecode.Emit(Op.ConvToFloat);
@@ -1038,6 +1040,13 @@ internal static class GS2Compiler
 					if (NeedsNumericConversion(right)) _bytecode.Emit(Op.ConvToFloat);
 					_bytecode.Emit(Op.Mul);
 					_bytecode.Emit(Op.UnarySub);
+					break;
+				case BinaryExpr { Op: "==" or "!=", Left: StringCastExpr { Expression: MemberExpr left }, Right: StringCastExpr { Expression: MemberExpr right } } castCompare:
+					Emit(left);
+					Emit(right);
+					_bytecode.Emit(Op.ConvToString);
+					_bytecode.Emit(BinaryOpcode(castCompare.Op));
+					_bytecode.Emit(Op.ConvToString);
 					break;
 				case BinaryExpr binary:
 					Emit(binary.Left);
@@ -1631,6 +1640,8 @@ internal static class GS2Compiler
 		};
 
 		private static bool IsNumberExpr(Expr expr) => ExpressionTypeOf(expr) == ExprType.Number;
+
+		private static bool UsesInlineForCondition(Expr expr) => expr is BinaryExpr { Op: "&&", Left: BinaryExpr { Op: ">", Left: MemberExpr { Object: IdentifierExpr { Name: "temp" } }, Right: UnaryExpr { Op: "-", Expression: NumberExpr { Text: "1" } } }, Right: UnaryExpr { Op: "!", Expression: MemberExpr { Object: IdentifierExpr { Name: "temp" } } } };
 
 		private static ExprType ExpressionTypeOf(Expr expr) => expr switch
 		{
