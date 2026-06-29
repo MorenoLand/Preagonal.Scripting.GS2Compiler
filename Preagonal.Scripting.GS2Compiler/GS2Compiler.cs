@@ -1166,7 +1166,10 @@ internal static class GS2Compiler
 			["arctan"] = Op.Arctan,
 			["vecx"] = Op.Vecx,
 			["vecy"] = Op.Vecy,
-			["abs"] = Op.Abs
+			["abs"] = Op.Abs,
+			["random"] = Op.Random,
+			["min"] = Op.Min,
+			["max"] = Op.Max
 		};
 
 		private static readonly HashSet<string> NonReturningBuiltInCalls = new(StringComparer.Ordinal)
@@ -1696,9 +1699,12 @@ internal static class GS2Compiler
 		InObj = 81,
 		Abs = 86,
 		Int = 85,
+		Random = 87,
 		Sin = 88,
 		Cos = 89,
 		Arctan = 90,
+		Min = 93,
+		Max = 94,
 		Vecx = 97,
 		Vecy = 98,
 		ShiftLeft = 101,

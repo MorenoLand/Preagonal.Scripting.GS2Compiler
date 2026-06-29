@@ -244,6 +244,31 @@ public class InterfaceTests
 		Assert.Contains("onServerListerConnect,universe.onServerListerConnect", functionNames);
 	}
 
+	[Fact]
+	public void Given_math_builtin_calls_When_compiling_Then_direct_opcodes_are_emitted()
+	{
+		const string scriptText =
+			"""
+						function onCreated() {
+						  temp.a = random(1, 2);
+						  temp.b = min(1, 2);
+						  temp.c = max(1, 2);
+						}
+			""";
+
+		var result = Interface.CompileCode(scriptText, withHeader: false);
+		var strings = ReadStringTable(result.ByteCode);
+		var code = ReadBytecodeSegment(result.ByteCode);
+
+		Assert.True(result.Success);
+		Assert.Contains((byte)87, code);
+		Assert.Contains((byte)93, code);
+		Assert.Contains((byte)94, code);
+		Assert.DoesNotContain("random", strings);
+		Assert.DoesNotContain("min", strings);
+		Assert.DoesNotContain("max", strings);
+	}
+
 	private static List<string> ReadFunctionNames(byte[] bytecode)
 	{
 		var offset = 0;
@@ -253,6 +278,37 @@ public class InterfaceTests
 			var length = ReadInt(bytecode, offset + 4);
 			offset += 8;
 			if (type == 2) return ReadFunctionSegment(bytecode, offset, length);
+			offset += length;
+		}
+		return [];
+	}
+
+	private static List<string> ReadStringTable(byte[] bytecode)
+	{
+		var segment = ReadSegment(bytecode, 3);
+		List<string> strings = [];
+		var offset = 0;
+		while (offset < segment.Length)
+		{
+			var start = offset;
+			while (offset < segment.Length && segment[offset] != 0) offset++;
+			strings.Add(Encoding.UTF8.GetString(segment, start, offset - start));
+			offset++;
+		}
+		return strings;
+	}
+
+	private static byte[] ReadBytecodeSegment(byte[] bytecode) => ReadSegment(bytecode, 4);
+
+	private static byte[] ReadSegment(byte[] bytecode, int segmentType)
+	{
+		var offset = 0;
+		while (offset + 8 <= bytecode.Length)
+		{
+			var type = ReadInt(bytecode, offset);
+			var length = ReadInt(bytecode, offset + 4);
+			offset += 8;
+			if (type == segmentType) return bytecode[offset..(offset + length)];
 			offset += length;
 		}
 		return [];
