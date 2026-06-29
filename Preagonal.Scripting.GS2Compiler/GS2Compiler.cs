@@ -625,7 +625,8 @@ internal static class GS2Compiler
 			if (statement is ExprStmt exprStatement)
 			{
 				Emit(exprStatement.Expression);
-				if (exprStatement.Expression is CallExpr or MethodCallExpr) _bytecode.Emit(Op.IndexDec);
+				if (exprStatement.Expression is CallExpr call && NonReturningBuiltInCalls.Contains(call.Name)) { }
+				else if (exprStatement.Expression is CallExpr or MethodCallExpr) _bytecode.Emit(Op.IndexDec);
 			}
 			else if (statement is ReturnStmt returnStatement)
 			{
@@ -1063,6 +1064,14 @@ internal static class GS2Compiler
 					}
 					_bytecode.Emit(builtIn);
 					break;
+				case CallExpr { Name: "sleep" } call:
+					for (var i = 0; i < call.Args.Count; ++i)
+					{
+						Emit(call.Args[i]);
+						if (!IsNumberExpr(call.Args[i])) _bytecode.Emit(Op.ConvToFloat);
+					}
+					_bytecode.Emit(Op.Sleep);
+					break;
 				case CallExpr call:
 					_bytecode.Emit(Op.TypeArray);
 					for (var i = call.Args.Count - 1; i >= 0; --i) Emit(call.Args[i]);
@@ -1152,6 +1161,11 @@ internal static class GS2Compiler
 			["vecx"] = Op.Vecx,
 			["vecy"] = Op.Vecy,
 			["abs"] = Op.Abs
+		};
+
+		private static readonly HashSet<string> NonReturningBuiltInCalls = new(StringComparer.Ordinal)
+		{
+			"sleep"
 		};
 
 		private static bool IsNumericOp(string op) => op is "+" or "-" or "*" or "/" or "%" or "^";
@@ -1626,6 +1640,7 @@ internal static class GS2Compiler
 		If = 4,
 		And = 5,
 		Call = 6,
+		Sleep = 8,
 		CmdCall = 9,
 		Jmp = 10,
 		TypeNumber = 20,

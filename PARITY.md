@@ -1,10 +1,12 @@
 # GS2 parity progress
 
-Current advanced fixture score: 45 / 155 byte-for-byte hashes, 45 / 155 byte sizes.
+Current advanced fixture score: 47 / 155 byte-for-byte hashes, 47 / 155 byte sizes.
 
 Locked advanced parity fixtures:
 - `tests/scripts/advanced/g2k1/weaponRailroad Destroyer.gs2`
 - `tests/scripts/advanced/g2k1/weaponShovel.gs2`
+- `tests/scripts/advanced/g2k1/weaponMemeCentral.gs2`
+- `tests/scripts/advanced/g2k1/weaponCatch Net.gs2`
 - `tests/scripts/advanced/graalx/weaponItems_Chemicals.gs2`
 - `tests/scripts/advanced/g2k1/weaponMetal Axe.gs2`
 - `tests/scripts/advanced/graalx/weaponVulcan.gs2`
