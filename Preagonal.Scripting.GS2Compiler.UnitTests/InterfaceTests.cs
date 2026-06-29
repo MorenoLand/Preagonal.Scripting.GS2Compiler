@@ -371,6 +371,8 @@ public class InterfaceTests
 						  temp.posi = this.items.index("a");
 						  temp.kind = this.items.type();
 						  temp.tail = this.items.subarray(1);
+						  temp.keys = this.items.indices();
+						  temp.ref = this.items.link();
 						}
 			""";
 
@@ -381,9 +383,13 @@ public class InterfaceTests
 		Assert.True(result.Success);
 		Assert.Contains((byte)82, code);
 		Assert.Contains((byte)83, code);
+		Assert.Contains((byte)99, code);
+		Assert.Contains((byte)100, code);
 		Assert.Contains((byte)135, code);
 		Assert.DoesNotContain("index", strings);
 		Assert.DoesNotContain("type", strings);
+		Assert.DoesNotContain("indices", strings);
+		Assert.DoesNotContain("link", strings);
 		Assert.DoesNotContain("subarray", strings);
 	}
 

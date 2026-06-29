@@ -1134,6 +1134,18 @@ internal static class GS2Compiler
 						_bytecode.Emit(Op.ObjType);
 						break;
 					}
+					if (call.Name == "indices" && call.Args.Count == 0)
+					{
+						Emit(call.Object);
+						_bytecode.Emit(Op.ObjIndices);
+						break;
+					}
+					if (call.Name == "link" && call.Args.Count == 0)
+					{
+						Emit(call.Object);
+						_bytecode.Emit(Op.ObjLink);
+						break;
+					}
 					if (call.Name == "index")
 					{
 						Emit(call.Object);
@@ -1909,6 +1921,8 @@ internal static class GS2Compiler
 		GetDir = 96,
 		Vecx = 97,
 		Vecy = 98,
+		ObjIndices = 99,
+		ObjLink = 100,
 		ShiftLeft = 101,
 		ShiftRight = 102,
 		Char = 103,
