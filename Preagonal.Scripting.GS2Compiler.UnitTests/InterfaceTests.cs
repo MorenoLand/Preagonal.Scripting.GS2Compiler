@@ -258,6 +258,7 @@ public class InterfaceTests
 						  temp.f = pow(2, 3);
 						  temp.g = getangle(1, 0);
 						  temp.h = getdir(1, 0);
+						  temp.i = char(65);
 						}
 			""";
 
@@ -273,6 +274,7 @@ public class InterfaceTests
 		Assert.Contains((byte)94, code);
 		Assert.Contains((byte)95, code);
 		Assert.Contains((byte)96, code);
+		Assert.Contains((byte)103, code);
 		Assert.Contains((byte)65, code);
 		Assert.DoesNotContain("random", strings);
 		Assert.DoesNotContain("min", strings);
@@ -282,6 +284,7 @@ public class InterfaceTests
 		Assert.DoesNotContain("pow", strings);
 		Assert.DoesNotContain("getangle", strings);
 		Assert.DoesNotContain("getdir", strings);
+		Assert.DoesNotContain("char", strings);
 	}
 
 	[Fact]
