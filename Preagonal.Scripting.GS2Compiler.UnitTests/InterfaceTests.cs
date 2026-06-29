@@ -327,6 +327,25 @@ public class InterfaceTests
 	}
 
 	[Fact]
+	public void Given_new_block_with_call_When_compiling_Then_function_emits_cmd_call()
+	{
+		const string scriptText =
+			"""
+						function onCreated() {
+						  new GuiWindowCtrl("Window") {
+						    clearrows();
+						  }
+						}
+			""";
+
+		var result = Interface.CompileCode(scriptText, withHeader: false);
+		var code = ReadBytecodeSegment(result.ByteCode);
+
+		Assert.True(result.Success);
+		Assert.True(Contains([10, 9], code));
+	}
+
+	[Fact]
 	public void Given_makevar_call_When_compiling_Then_direct_opcode_is_emitted()
 	{
 		const string scriptText =
