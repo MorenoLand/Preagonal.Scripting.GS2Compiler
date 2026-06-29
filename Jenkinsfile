@@ -185,7 +185,7 @@ node('master') {
 		returnStdout: true
 	).trim();
 
-	sh('git fetch --tags');
+//	sh('git fetch --tags');
 
 	env.LATEST_TAG = sh(
 		script: 'git tag --sort=creatordate -l | tail -1',
