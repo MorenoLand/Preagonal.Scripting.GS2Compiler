@@ -1136,6 +1136,13 @@ internal static class GS2Compiler
 						_bytecode.Emit(call.Name == "starts" ? Op.ObjStarts : Op.ObjEnds);
 						break;
 					}
+					if (call.Name == "trim" && call.Args.Count == 0)
+					{
+						Emit(call.Object);
+						if (NeedsStringConversion(call.Object)) _bytecode.Emit(Op.ConvToString);
+						_bytecode.Emit(Op.ObjTrim);
+						break;
+					}
 					_bytecode.Emit(Op.TypeArray);
 					for (var i = call.Args.Count - 1; i >= 0; --i) Emit(call.Args[i]);
 					Emit(call.Object);
@@ -1761,6 +1768,7 @@ internal static class GS2Compiler
 		ShiftLeft = 101,
 		ShiftRight = 102,
 		Char = 103,
+		ObjTrim = 110,
 		ObjLength = 111,
 		ObjPos = 112,
 		Join = 113,

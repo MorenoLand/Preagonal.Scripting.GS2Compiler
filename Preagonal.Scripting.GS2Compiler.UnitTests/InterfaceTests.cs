@@ -367,6 +367,25 @@ public class InterfaceTests
 		Assert.DoesNotContain("ends", strings);
 	}
 
+	[Fact]
+	public void Given_trim_method_call_When_compiling_Then_object_trim_opcode_is_emitted()
+	{
+		const string scriptText =
+			"""
+						function onCreated() {
+						  temp.name = player.account.trim();
+						}
+			""";
+
+		var result = Interface.CompileCode(scriptText, withHeader: false);
+		var strings = ReadStringTable(result.ByteCode);
+		var code = ReadBytecodeSegment(result.ByteCode);
+
+		Assert.True(result.Success);
+		Assert.Contains((byte)110, code);
+		Assert.DoesNotContain("trim", strings);
+	}
+
 	private static List<string> ReadFunctionNames(byte[] bytecode)
 	{
 		var offset = 0;
