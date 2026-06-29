@@ -1,6 +1,6 @@
 # GS2 parity progress
 
-Current advanced fixture score: 128 / 155 byte-for-byte hashes, 130 / 155 byte sizes.
+Current advanced fixture score: 135 / 155 byte-for-byte hashes, 140 / 155 byte sizes.
 
 Locked direct builtins:
 - `setarray(object, size)` emits `OP_SETARRAY` (`39`) directly and does not add `setarray` to the string table.
@@ -16,6 +16,7 @@ Locked advanced parity fixtures:
 - `tests/scripts/advanced/g2k1/weaponDiving.gs2`
 - `tests/scripts/advanced/g2k1/weaponGold Axe.gs2`
 - `tests/scripts/advanced/g2k1/weaponGold Hammer.gs2`
+- `tests/scripts/advanced/g2k1/weapongxtest.gs2`
 - `tests/scripts/advanced/g2k1/weaponHat-Trading.gs2`
 - `tests/scripts/advanced/g2k1/weaponHat-Trading-GS2.gs2`
 - `tests/scripts/advanced/g2k1/weaponMemeCentral.gs2`
@@ -47,6 +48,7 @@ Locked advanced parity fixtures:
 - `tests/scripts/advanced/graalx/weapon+Presents.gs2`
 - `tests/scripts/advanced/graalx/weapon+Seeds.gs2`
 - `tests/scripts/advanced/graalx/weapon%045CarSystem.gs2`
+- `tests/scripts/advanced/graalx/weapon%045System.gs2`
 - `tests/scripts/advanced/graalx/weaponBackups_Radio.gs2`
 - `tests/scripts/advanced/graalx/weapon-BizSystem.gs2`
 - `tests/scripts/advanced/graalx/weaponBrasas.gs2`
@@ -62,6 +64,7 @@ Locked advanced parity fixtures:
 - `tests/scripts/advanced/graalx/weaponFrankie_Test.gs2`
 - `tests/scripts/advanced/graalx/weapon-Functions.gs2`
 - `tests/scripts/advanced/graalx/weapon-Gang Control.gs2`
+- `tests/scripts/advanced/graalx/weapon-GangSys.gs2`
 - `tests/scripts/advanced/graalx/weapon-GraalDB.gs2`
 - `tests/scripts/advanced/graalx/weapon-Gravity.gs2`
 - `tests/scripts/advanced/graalx/weapon-Gui.gs2`
@@ -77,6 +80,7 @@ Locked advanced parity fixtures:
 - `tests/scripts/advanced/graalx/weaponJobs_Mining Axe.gs2`
 - `tests/scripts/advanced/graalx/weaponJobs_Mining TNT.gs2`
 - `tests/scripts/advanced/graalx/weaponJobs_Roller.gs2`
+- `tests/scripts/advanced/graalx/weaponJobs_Seeds.gs2`
 - `tests/scripts/advanced/graalx/weaponJobs_Stack.gs2`
 - `tests/scripts/advanced/graalx/weaponJobs_Water Can.gs2`
 - `tests/scripts/advanced/graalx/weapon-Job Quests.gs2`
@@ -92,16 +96,21 @@ Locked advanced parity fixtures:
 - `tests/scripts/advanced/graalx/weapon-NBuySys.gs2`
 - `tests/scripts/advanced/graalx/weapon-NewGangSys.gs2`
 - `tests/scripts/advanced/graalx/weapon-NewWeather.gs2`
+- `tests/scripts/advanced/graalx/weapon-News.gs2`
 - `tests/scripts/advanced/graalx/weapon-Profile.gs2`
+- `tests/scripts/advanced/graalx/weapon-QMenu.gs2`
 - `tests/scripts/advanced/graalx/weaponRadio.gs2`
+- `tests/scripts/advanced/graalx/weaponRemoteControl.gs2`
 - `tests/scripts/advanced/graalx/weaponRC_AttributesWindow.gs2`
 - `tests/scripts/advanced/graalx/weaponRC_NCControl.gs2`
 - `tests/scripts/advanced/graalx/weaponRC_RightsWindow.gs2`
 - `tests/scripts/advanced/graalx/weaponRock Throw.gs2`
 - `tests/scripts/advanced/graalx/weaponRWA_Plane.gs2`
 - `tests/scripts/advanced/graalx/weapon-Shake.gs2`
+- `tests/scripts/advanced/graalx/weapon-Staff.gs2`
 - `tests/scripts/advanced/graalx/weaponStaff_Axe.gs2`
 - `tests/scripts/advanced/graalx/weapon-StaffTool.gs2`
+- `tests/scripts/advanced/graalx/weapon-System.gs2`
 - `tests/scripts/advanced/graalx/weaponSystems_ArchetypeEditor.gs2`
 - `tests/scripts/advanced/graalx/weaponSystems_B2.gs2`
 - `tests/scripts/advanced/graalx/weaponSystems_BackupSys.gs2`
@@ -114,8 +123,10 @@ Locked advanced parity fixtures:
 - `tests/scripts/advanced/graalx/weaponSystems_Vote.gs2`
 - `tests/scripts/advanced/graalx/weaponTig_NPC.gs2`
 - `tests/scripts/advanced/graalx/weaponToys_CDPlayer.gs2`
+- `tests/scripts/advanced/graalx/weaponToys_GameEngine.gs2`
 - `tests/scripts/advanced/graalx/weaponTwinny_Tool.gs2`
 - `tests/scripts/advanced/graalx/weapon-Virus.gs2`
+- `tests/scripts/advanced/graalx/weapon-Vault.gs2`
 - `tests/scripts/advanced/graalx/weaponVulcan.gs2`
 - `tests/scripts/advanced/graalx/weaponWeapons_Grenade.gs2`
 - `tests/scripts/advanced/graalx/weaponWeapons_Hand Cuffs.gs2`
