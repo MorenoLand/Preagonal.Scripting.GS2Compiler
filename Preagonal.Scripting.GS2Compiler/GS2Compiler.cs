@@ -743,7 +743,7 @@ internal static class GS2Compiler
 			foreach (var stmt in statement.Body) EmitStatement(stmt);
 			foreach (var patch in continuePatches) _bytecode.PatchShort(patch, _bytecode.OpIndex);
 			_bytecode.Emit(Op.SetIndex);
-			_bytecode.EmitDynamicNumber(start);
+			_bytecode.EmitNumberOperand(start);
 			_continuePatches.Pop();
 			_breakPatches.Pop();
 			foreach (var patch in breakPatches) _bytecode.PatchShort(patch, _bytecode.OpIndex);
@@ -1243,6 +1243,7 @@ internal static class GS2Compiler
 			BinaryExpr { Op: "@" or " " or "\n" or "\t" } or StringExpr or CastExpr { Type: "_" } => ExprType.String,
 			BinaryExpr { Op: "@=" } => ExprType.String,
 			BinaryExpr { Op: "=", Right: var right } => ExpressionTypeOf(right),
+			TernaryExpr { WhenTrue: var trueExpr, WhenFalse: var falseExpr } when ExpressionTypeOf(trueExpr) == ExpressionTypeOf(falseExpr) => ExpressionTypeOf(trueExpr),
 			ArrayLiteralExpr => ExprType.Array,
 			NewObjectExpr or NewArrayExpr or NullExpr => ExprType.Object,
 			_ => ExprType.Unknown
