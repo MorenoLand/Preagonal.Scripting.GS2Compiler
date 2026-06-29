@@ -288,6 +288,25 @@ public class InterfaceTests
 		Assert.DoesNotContain("size", strings);
 	}
 
+	[Fact]
+	public void Given_length_method_call_When_compiling_Then_object_length_opcode_is_emitted()
+	{
+		const string scriptText =
+			"""
+						function onCreated() {
+						  temp.count = player.account.length();
+						}
+			""";
+
+		var result = Interface.CompileCode(scriptText, withHeader: false);
+		var strings = ReadStringTable(result.ByteCode);
+		var code = ReadBytecodeSegment(result.ByteCode);
+
+		Assert.True(result.Success);
+		Assert.Contains((byte)111, code);
+		Assert.DoesNotContain("length", strings);
+	}
+
 	private static List<string> ReadFunctionNames(byte[] bytecode)
 	{
 		var offset = 0;

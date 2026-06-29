@@ -1093,6 +1093,13 @@ internal static class GS2Compiler
 						_bytecode.Emit(Op.ObjSize);
 						break;
 					}
+					if (call.Name == "length" && call.Args.Count == 0)
+					{
+						Emit(call.Object);
+						if (NeedsStringConversion(call.Object)) _bytecode.Emit(Op.ConvToString);
+						_bytecode.Emit(Op.ObjLength);
+						break;
+					}
 					_bytecode.Emit(Op.TypeArray);
 					for (var i = call.Args.Count - 1; i >= 0; --i) Emit(call.Args[i]);
 					Emit(call.Object);
@@ -1717,6 +1724,7 @@ internal static class GS2Compiler
 		ShiftLeft = 101,
 		ShiftRight = 102,
 		Char = 103,
+		ObjLength = 111,
 		Join = 113,
 		Translate = 119,
 		ObjSize = 130,
