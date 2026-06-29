@@ -307,6 +307,25 @@ public class InterfaceTests
 		Assert.DoesNotContain("length", strings);
 	}
 
+	[Fact]
+	public void Given_substring_method_call_When_compiling_Then_object_substring_opcode_is_emitted()
+	{
+		const string scriptText =
+			"""
+						function onCreated() {
+						  temp.prefix = player.account.substring(0, 3);
+						}
+			""";
+
+		var result = Interface.CompileCode(scriptText, withHeader: false);
+		var strings = ReadStringTable(result.ByteCode);
+		var code = ReadBytecodeSegment(result.ByteCode);
+
+		Assert.True(result.Success);
+		Assert.Contains((byte)115, code);
+		Assert.DoesNotContain("substring", strings);
+	}
+
 	private static List<string> ReadFunctionNames(byte[] bytecode)
 	{
 		var offset = 0;

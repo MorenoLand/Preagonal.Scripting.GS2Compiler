@@ -1100,6 +1100,18 @@ internal static class GS2Compiler
 						_bytecode.Emit(Op.ObjLength);
 						break;
 					}
+					if (call.Name == "substring")
+					{
+						Emit(call.Object);
+						if (NeedsStringConversion(call.Object)) _bytecode.Emit(Op.ConvToString);
+						foreach (var arg in call.Args)
+						{
+							Emit(arg);
+							if (!IsNumberExpr(arg)) _bytecode.Emit(Op.ConvToFloat);
+						}
+						_bytecode.Emit(Op.ObjSubstr);
+						break;
+					}
 					_bytecode.Emit(Op.TypeArray);
 					for (var i = call.Args.Count - 1; i >= 0; --i) Emit(call.Args[i]);
 					Emit(call.Object);
@@ -1726,6 +1738,7 @@ internal static class GS2Compiler
 		Char = 103,
 		ObjLength = 111,
 		Join = 113,
+		ObjSubstr = 115,
 		Translate = 119,
 		ObjSize = 130,
 		Array = 131,
