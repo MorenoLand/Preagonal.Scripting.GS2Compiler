@@ -306,6 +306,27 @@ public class InterfaceTests
 	}
 
 	[Fact]
+	public void Given_duplicate_function_names_When_compiling_Then_second_prejump_stays_unpatched()
+	{
+		const string scriptText =
+			"""
+						function ChatBar.onAction() {
+						  temp.a = 1;
+						}
+
+						function ChatBar.onAction() {
+						  temp.b = 2;
+						}
+			""";
+
+		var result = Interface.CompileCode(scriptText, withHeader: false);
+		var code = ReadBytecodeSegment(result.ByteCode);
+
+		Assert.True(result.Success);
+		Assert.True(Contains([1, 244, 0, 0], code));
+	}
+
+	[Fact]
 	public void Given_makevar_call_When_compiling_Then_direct_opcode_is_emitted()
 	{
 		const string scriptText =
