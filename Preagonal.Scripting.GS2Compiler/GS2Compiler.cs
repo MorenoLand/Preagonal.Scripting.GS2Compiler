@@ -1465,6 +1465,7 @@ internal static class GS2Compiler
 			WhileStmt stmt => ContainsCall(stmt.Condition) || stmt.Body.Exists(ContainsCall),
 			WithStmt stmt => ContainsCall(stmt.Target) || stmt.Body.Exists(ContainsCall),
 			SwitchStmt stmt => ContainsCall(stmt.Expression) || stmt.Cases.Exists(c => c.Body.Exists(ContainsCall) || c.Labels.Exists(label => label != null && ContainsCall(label))),
+			NewStmt stmt => stmt.Args.Exists(ContainsCall) || stmt.Body.Exists(ContainsCall),
 			_ => false
 		};
 
