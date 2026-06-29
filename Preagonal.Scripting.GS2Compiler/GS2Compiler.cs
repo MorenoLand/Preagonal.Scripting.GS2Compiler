@@ -665,7 +665,7 @@ internal static class GS2Compiler
 			Emit(statement.Condition, false, false, 0, true);
 			_conditionSuccessPatches.Pop();
 			_conditionFailPatches.Pop();
-			if (!IsBooleanExpr(statement.Condition)) _bytecode.Emit(Op.ConvToFloat);
+			if (!IsBooleanExpr(statement.Condition) && NeedsNumericConversion(statement.Condition)) _bytecode.Emit(Op.ConvToFloat);
 			foreach (var patch in conditionSuccessPatches) _bytecode.PatchShort(patch, _bytecode.OpIndex);
 			_bytecode.Emit(Op.If);
 			var failLoc = _bytecode.EmitNumberOperandPlaceholder();
@@ -693,7 +693,7 @@ internal static class GS2Compiler
 			Emit(statement.Condition, false, false, 0, true);
 			_conditionSuccessPatches.Pop();
 			_conditionFailPatches.Pop();
-			if (!IsBooleanExpr(statement.Condition)) _bytecode.Emit(Op.ConvToFloat);
+			if (!IsBooleanExpr(statement.Condition) && NeedsNumericConversion(statement.Condition)) _bytecode.Emit(Op.ConvToFloat);
 			foreach (var patch in conditionSuccessPatches) _bytecode.PatchShort(patch, _bytecode.OpIndex);
 			_bytecode.Emit(Op.If);
 			var breakLoc = _bytecode.EmitNumberOperandPlaceholder();
@@ -747,7 +747,7 @@ internal static class GS2Compiler
 			Emit(statement.Condition, false, false, 0, true);
 			_conditionSuccessPatches.Pop();
 			_conditionFailPatches.Pop();
-			if (!IsBooleanExpr(statement.Condition)) _bytecode.Emit(Op.ConvToFloat);
+			if (!IsBooleanExpr(statement.Condition) && NeedsNumericConversion(statement.Condition)) _bytecode.Emit(Op.ConvToFloat);
 			foreach (var patch in conditionSuccessPatches) _bytecode.PatchShort(patch, _bytecode.OpIndex);
 			List<int> breakPatches = [];
 			_breakPatches.Push(breakPatches);

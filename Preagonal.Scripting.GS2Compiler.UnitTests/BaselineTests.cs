@@ -66,6 +66,7 @@ public class BaselineTests
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "graalx", "weaponJobs_Stack.gs2")];
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "graalx", "weaponJobs_Roller.gs2")];
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "graalx", "weaponLevelGen.gs2")];
+		yield return [Path.Combine(root, "tests", "scripts", "advanced", "graalx", "weapon-Map.gs2")];
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "graalx", "weapon-Minimap.gs2")];
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "graalx", "weapon-NewWeather.gs2")];
 		yield return [Path.Combine(root, "tests", "scripts", "advanced", "graalx", "weapon-NewGangSys.gs2")];
