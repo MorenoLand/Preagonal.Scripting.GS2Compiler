@@ -994,16 +994,7 @@ internal static class GS2Compiler
 					else _bytecode.PatchShort(loc, _bytecode.OpIndex - (logicalInline ? 1 : 0) + (!logicalInline ? suppressedLogicalPatchOffset : 0));
 					break;
 				case TernaryExpr ternary:
-					Emit(ternary.Condition, false, false, 0);
-					if (!IsBooleanExpr(ternary.Condition)) _bytecode.Emit(Op.ConvToFloat);
-					_bytecode.Emit(Op.If);
-					var failLoc = _bytecode.EmitNumberOperandPlaceholder();
-					Emit(ternary.WhenTrue);
-					_bytecode.PatchShort(failLoc, _bytecode.OpIndex + 1);
-					_bytecode.Emit(Op.SetIndex);
-					var successLoc = _bytecode.EmitNumberOperandPlaceholder();
-					Emit(ternary.WhenFalse);
-					_bytecode.PatchShort(successLoc, _bytecode.OpIndex);
+					EmitTernary(ternary);
 					break;
 				case BinaryExpr { Op: " " or "\n" or "\t", Left: var left, Right: var right } spacedConcat:
 					Emit(left);
@@ -1483,6 +1474,25 @@ internal static class GS2Compiler
 			Emit(expr.Index);
 			if (!IsNumberExpr(expr.Index)) _bytecode.Emit(Op.ConvToFloat);
 			if (!assignmentTarget) _bytecode.Emit(Op.Array);
+		}
+
+		private void EmitTernary(TernaryExpr ternary, int? chainedSuccessLoc = null)
+		{
+			Emit(ternary.Condition, false, false, 0);
+			if (!IsBooleanExpr(ternary.Condition)) _bytecode.Emit(Op.ConvToFloat);
+			if (chainedSuccessLoc.HasValue) _bytecode.PatchShort(chainedSuccessLoc.Value, _bytecode.OpIndex);
+			_bytecode.Emit(Op.If);
+			var failLoc = _bytecode.EmitNumberOperandPlaceholder();
+			Emit(ternary.WhenTrue);
+			_bytecode.PatchShort(failLoc, _bytecode.OpIndex + 1);
+			_bytecode.Emit(Op.SetIndex);
+			var successLoc = _bytecode.EmitNumberOperandPlaceholder();
+			if (ternary.WhenFalse is TernaryExpr nested) EmitTernary(nested, successLoc);
+			else
+			{
+				Emit(ternary.WhenFalse);
+				_bytecode.PatchShort(successLoc, _bytecode.OpIndex);
+			}
 		}
 
 		private void EmitMultiArrayIndex(MultiArrayIndexExpr expr, bool assignmentTarget)
