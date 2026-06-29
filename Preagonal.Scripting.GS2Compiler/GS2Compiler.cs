@@ -428,6 +428,7 @@ internal static class GS2Compiler
 						IdentifierExpr id => new CallExpr(id.Name, args),
 						MemberExpr member => new MethodCallExpr(member.Object, member.Name, args),
 						CallExpr call => new ChainedCallExpr(call, args),
+						DynamicMemberExpr member => new DynamicMethodCallExpr(member.Object, member.Name, args),
 						_ => expr
 					};
 					continue;
@@ -1058,7 +1059,7 @@ internal static class GS2Compiler
 				case DynamicMemberExpr member:
 					Emit(member.Object);
 					if (NeedsObjectConversion(member.Object)) _bytecode.Emit(Op.ConvToObject);
-					if (member.Name is StringCastExpr { Expression: IdentifierExpr } nameCast)
+					if (member.Name is StringCastExpr { Expression: IdentifierExpr or MemberExpr { Object: IdentifierExpr { Name: "temp" } } } nameCast)
 					{
 						Emit(nameCast.Expression);
 						if (NeedsNumericConversion(nameCast.Expression)) _bytecode.Emit(Op.ConvToFloat);
@@ -1276,6 +1277,16 @@ internal static class GS2Compiler
 					_bytecode.Emit(Op.TypeArray);
 					for (var i = call.Args.Count - 1; i >= 0; --i) Emit(call.Args[i]);
 					Emit(call.Call);
+					_bytecode.Emit(Op.Call);
+					break;
+				case DynamicMethodCallExpr call:
+					_bytecode.Emit(Op.TypeArray);
+					for (var i = call.Args.Count - 1; i >= 0; --i) Emit(call.Args[i]);
+					Emit(call.Object);
+					if (NeedsObjectConversion(call.Object) || call.Object is ArrayIndexExpr) _bytecode.Emit(Op.ConvToObject);
+					Emit(call.Name);
+					if (NeedsStringConversion(call.Name)) _bytecode.Emit(Op.ConvToString);
+					_bytecode.Emit(Op.MemberAccess);
 					_bytecode.Emit(Op.Call);
 					break;
 				case MethodCallExpr call:
@@ -1662,6 +1673,8 @@ internal static class GS2Compiler
 			CallExpr => true,
 			ChainedCallExpr => true,
 			MethodCallExpr => true,
+			DynamicMethodCallExpr => true,
+			NewObjectExpr obj => obj.Args.Count > 0,
 			InExpr inExpr => ContainsCall(inExpr.Expression) || ContainsCall(inExpr.Lower) || (inExpr.Upper != null && ContainsCall(inExpr.Upper)),
 			TernaryExpr ternary => ContainsCall(ternary.Condition) || ContainsCall(ternary.WhenTrue) || ContainsCall(ternary.WhenFalse),
 			BinaryExpr binary => ContainsCall(binary.Left) || ContainsCall(binary.Right),
@@ -2084,6 +2097,7 @@ internal static class GS2Compiler
 	private sealed record CallExpr(string Name, List<Expr> Args) : Expr;
 	private sealed record ChainedCallExpr(CallExpr Call, List<Expr> Args) : Expr;
 	private sealed record MethodCallExpr(Expr Object, string Name, List<Expr> Args) : Expr;
+	private sealed record DynamicMethodCallExpr(Expr Object, Expr Name, List<Expr> Args) : Expr;
 	private sealed record NewObjectExpr(string TypeName, List<Expr> Args) : Expr;
 	private sealed record NewArrayExpr(List<int> Dimensions) : Expr;
 	private sealed record LambdaExpr(string Name, List<Expr> Args, List<Stmt> Body) : Expr;
